@@ -1,7 +1,7 @@
 import { Board } from './board.js';
-import { BoardRenderer } from './render.js';
+import { BoardRenderer } from './render.js?v=20261104c';
 import { attachInput } from './input.js';
-import { audio } from './audio.js';
+import { audio } from './audio.js?v=20261104c';
 
 export const MODES = {
   classic: {
