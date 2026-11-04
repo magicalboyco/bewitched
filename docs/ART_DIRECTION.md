@@ -14,7 +14,7 @@
 | `star` | Sun Citrine | Round brilliant | `#FFEA56` |
 | `marigold` | Amber Topaz | Cushion | `#FFB750` |
 | `potion` | Rose Coral | Pear | `#FE797B` |
-| `crescent` | Periwinkle Moonstone | Marquise | `#8FA8FF` |
+| `crescent` | Sapphire Crescent | Marquise | `#2F6BFF` |
 
 These internal IDs are preserved deliberately. They are **not** license to display the old flower/moon/clover graphics: the new visual identity is the jewel artwork.
 
@@ -32,7 +32,7 @@ These internal IDs are preserved deliberately. They are **not** license to displ
 ## Special-piece effect specification (owned by gameplay renderer)
 
 - **Spark Charm / four-match:** warm antique-gold halo. Soft 1.4-second breathing glow and 3–5 tiny moving four-point glints. Don't draw an ugly slash across the jewel.
-- **Crystal Ball / five-match:** lavender-periwinkle halo, slow orbiting crescent/sigil particles, occasional bright gold starburst. Clearly different from Spark.
+- **Crystal Ball / five-match:** lavender-sapphire blue halo, slow orbiting crescent/sigil particles, occasional bright gold starburst. Clearly different from Spark.
 - **Witchfire / L or T match:** coral–gold heart-shaped flame swirl, distinct from either effect above.
 - **Grand spell:** a gently expanding ring and a short shower of dust, not an intense white strobe.
 - In reduced-motion mode, render clear static outlines or small badges instead of pulsing/rotation. No flashing above 3 Hz.
