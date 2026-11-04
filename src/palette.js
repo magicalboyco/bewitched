@@ -6,7 +6,7 @@ export const PIECE_COLORS = {
   yellow: '#FFEA56',
   orange: '#FFB750',
   coral: '#FE797B',
-  periwinkle: '#8FA8FF',
+  periwinkle: '#2F6BFF', // sapphire correction — was too close to lavender; key name kept per art-direction note
 };
 
 // Menus / frame / world: witchy purple-gold-navy set.

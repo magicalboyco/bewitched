@@ -101,13 +101,13 @@ function drawJewel(ctx,type,cx,cy,r) {
   ctx.lineJoin='round';ctx.stroke();
   ctx.restore();
 }
-function star(ctx,x,y,size,alpha=1) {
+function star(ctx,x,y,size,alpha=1,glow='#fff1b7',fill='#fff6d7') {
   ctx.save();
   ctx.globalAlpha=alpha;
   ctx.translate(x,y);
-  ctx.shadowColor='#fff1b7';
+  ctx.shadowColor=glow;
   ctx.shadowBlur=size*2.2;
-  ctx.fillStyle='#fff6d7';
+  ctx.fillStyle=fill;
   ctx.beginPath();
   ctx.moveTo(0,-size);
   ctx.quadraticCurveTo(size*.19,-size*.19,size,0);
@@ -117,18 +117,43 @@ function star(ctx,x,y,size,alpha=1) {
   ctx.fill();
   ctx.restore();
 }
+// A tapered luminous streak trailing a Comet, always pointing the same
+// general direction (gentle sway with t) so it reads as "in motion" even
+// when the gem itself is sitting still.
+function cometTail(ctx,cx,cy,r,t,hue) {
+  const angle=Math.PI*0.22+Math.sin(t*0.6)*0.05;
+  const len=r*1.9;
+  const tx=cx-Math.cos(angle)*len, ty=cy-Math.sin(angle)*len;
+  ctx.save();
+  const grad=ctx.createLinearGradient(cx,cy,tx,ty);
+  grad.addColorStop(0,hue+'cc');
+  grad.addColorStop(0.5,hue+'55');
+  grad.addColorStop(1,hue+'00');
+  ctx.strokeStyle=grad;
+  ctx.lineCap='round';
+  ctx.lineWidth=Math.max(1.5,r*0.32);
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(tx,ty);
+  ctx.stroke();
+  ctx.restore();
+}
 // Each special kind gets its own halo color and orbiting-star count so
 // they read as distinct at a glance: gold Sparks, violet Crystal Balls,
-// ember Comets (the 6-in-a-row tier — row + column + color, all at once),
-// emerald Witchfire (the L/T-shape tier — a 3x3 burst).
+// ember Comets (the 6-in-a-row tier — row + column + color, all at once,
+// with an icy white-blue nucleus and a directional tail), coral-gold
+// Witchfire (the L/T-shape tier — a 3x3 burst, flame-swirl styling).
 const SPECIAL_HUES = {
   'spark-row': '#ffe3a0',
   'spark-col': '#ffe3a0',
   crystalball: '#b9a4ff',
   comet: '#ffb37a',
-  witchfire: '#8bffc0',
+  witchfire: '#ff9a56',
 };
 const SPECIAL_COUNTS = { crystalball: 6, comet: 8, witchfire: 5 };
+const ICY_CORE = { glow: '#bfeaff', fill: '#eafdff' };
+const COMET_TAIL_HUE = '#bfe3ff';
+const WITCHFIRE_EMBER = { glow: '#ffcf8a', fill: '#ffd9a0' };
 
 function drawSpecial(ctx,special,cx,cy,r,t) {
   const ball=special==='crystalball';
@@ -159,14 +184,22 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
     ctx.beginPath();ctx.arc(cx,cy,r*1.3,-phase*1.3,-phase*1.3+Math.PI*1.1);ctx.stroke();
   }
 
+  if(comet) cometTail(ctx,cx,cy,r,reduced?0:t,COMET_TAIL_HUE);
+
   const count=SPECIAL_COUNTS[special]||4;
   for(let i=0;i<count;i++){
     const a=phase*(i%2===0?1:-.75)+i*2*Math.PI/count;
     const d=r*(1.12+.1*Math.sin(t*3+i));
     const size=r*(SPECIAL_COUNTS[special]?.12:.10)*(0.72+0.28*Math.sin(t*4+i*2)**2);
-    star(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,size,.62+.38*pulse);
+    const alpha=.62+.38*pulse;
+    if(witchfire && i%2===1){
+      // Alternate coral and ember-gold glints for a two-tone flame swirl.
+      star(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,size,alpha,WITCHFIRE_EMBER.glow,WITCHFIRE_EMBER.fill);
+    } else {
+      star(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,size,alpha);
+    }
   }
-  star(ctx,cx-r*.3,cy-r*.4,r*(ball||comet?.24:.17),.45+.55*pulse);
+  if(!comet) star(ctx,cx-r*.3,cy-r*.4,r*(ball?.24:.17),.45+.55*pulse);
   if(ball){
     ctx.strokeStyle='#f7dfff';
     ctx.lineWidth=Math.max(1,r*.05);
@@ -174,8 +207,9 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
     ctx.beginPath();ctx.arc(cx,cy,r*.68,0,Math.PI*2);ctx.stroke();
     star(ctx,cx+r*.12,cy-r*.06,r*.24,.75+.25*pulse);
   } else if(comet){
-    // A bright, oversized core — the "biggest" special on the board.
-    star(ctx,cx,cy,r*.3,.8+.2*pulse);
+    // Icy white-blue nucleus — the "biggest" special on the board, and
+    // identifiable by its cool core + tail even with motion reduced.
+    star(ctx,cx,cy,r*.32,.85+.15*pulse,ICY_CORE.glow,ICY_CORE.fill);
   }
   ctx.restore();
 }
@@ -219,7 +253,9 @@ function drawGem(ctx, type, cx, cy, r) {
     drawJewel(ctx, type, cx, cy, r);
     return;
   }
-  const size = r * 2.2;
+  // r is already ~0.39 * cellSize (see render.js), so r*2.3 lands close to
+  // the manifest's suggested `cellSize * 0.90` starting point.
+  const size = r * 2.3;
   ctx.save();
   ctx.shadowColor = 'rgba(9,4,21,.5)';
   ctx.shadowBlur = r * 0.3;
