@@ -15,6 +15,9 @@ const finalScore = document.getElementById('final-score');
 const endTitle = document.getElementById('end-title');
 const hintBtn = document.getElementById('hint-btn');
 const soundBtn = document.getElementById('sound-btn');
+const musicBtn = document.getElementById('music-btn');
+const musicVolume = document.getElementById('music-volume');
+const musicVolumeLabel = document.getElementById('music-volume-label');
 const menuSoundBtn = document.getElementById('menu-sound-btn');
 
 let session = null;
@@ -41,6 +44,14 @@ function formatTime(sec) {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
   return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function updateMusicControls() {
+  musicBtn.textContent = audio.musicEnabled ? '♫' : '♫̸';
+  musicBtn.setAttribute('aria-pressed', String(audio.musicEnabled));
+  musicBtn.title = audio.musicEnabled ? 'Turn off calming music' : 'Turn on calming music';
+  musicVolume.value = String(Math.round(audio.musicVolume * 100));
+  musicVolumeLabel.textContent = `${Math.round(audio.musicVolume * 100)}%`;
 }
 
 function updateSoundIcons() {
@@ -86,6 +97,16 @@ soundBtn.addEventListener('click', () => {
   updateSoundIcons();
 });
 
+musicBtn.addEventListener('click', () => {
+  audio.toggleMusic();
+  updateMusicControls();
+});
+
+musicVolume.addEventListener('input', () => {
+  audio.setMusicVolume(Number(musicVolume.value)/100);
+  updateMusicControls();
+});
+
 menuSoundBtn.addEventListener('click', () => {
   audio.toggleMuted();
   updateSoundIcons();
@@ -112,4 +133,5 @@ document.getElementById('back-to-menu-btn').addEventListener('click', () => {
 });
 
 updateSoundIcons();
+updateMusicControls();
 renderModeCards();
