@@ -397,6 +397,52 @@ h1 {
   color: var(--gold);
 }
 
+/* ---------- Mia's animated portrait + dialogue, accessible on narrow displays ---------- */
+[hidden] { display: none !important; }
+.portrait-frame { flex-direction: column; gap: 8px; }
+.portrait-frame .mia-portrait {
+  width: 100%; max-width: 160px; border-radius: 10px;
+  border: 2px solid var(--gold); background: var(--cream);
+  box-shadow: 0 0 0 4px rgba(43,32,58,.6), 0 8px 20px rgba(0,0,0,.32);
+}
+.portrait-frame img.mia-portrait__body, .portrait-frame img.mia-portrait__expression {
+  width: 100%; max-width: none; height: 100%; border: 0;
+  border-radius: 8px; box-shadow: none; background: transparent;
+}
+.mia-portrait__expression { z-index: 1; }
+.mia-bubble:not([hidden]) {
+  display: block; position: relative; width: 100%; max-width: 196px;
+  padding: 8px 10px; border-radius: 12px;
+  background: #fff4d9; color: #452b5d; border: 1px solid #d8ab58;
+  box-shadow: 0 4px 11px rgba(0,0,0,.2); font: 700 12px/1.35 'PT Serif Caption', Georgia, serif;
+  text-align: center; overflow-wrap: break-word;
+}
+.mia-bubble:not([hidden])::before {
+  content: ''; position: absolute; top: -6px; left: calc(50% - 5px);
+  width: 10px; height: 10px; transform: rotate(45deg);
+  background: #fff4d9; border-left: 1px solid #d8ab58; border-top: 1px solid #d8ab58;
+}
+.mia-voice-play-control { margin-top: 12px !important; justify-content: flex-start !important; cursor: pointer; }
+.mia-voice-play-control input { accent-color: var(--gold); }
+.mia-voice-play-control span { margin-left: auto; }
+.end-mia-line { color: var(--lilac); font-size: 14px; }
+.menu-moon-divider { width: min(70%, 260px); max-height: 31px; object-fit: contain; }
+.menu-card::before, .menu-card::after {
+  content: ''; position: absolute; width: 44px; height: 44px;
+  background: url('assets/ui/filigree-corner.svg') center / contain no-repeat;
+  opacity: .48; pointer-events: none;
+}
+.menu-card::before { top: 6px; left: 6px; }
+.menu-card::after { bottom: 6px; right: 6px; transform: rotate(180deg); }
+@media (max-width: 760px) {
+  .portrait-frame { flex: 0 0 132px; }
+  .portrait-frame .mia-portrait { max-width: 85px; }
+  .mia-bubble:not([hidden]) { font-size: 11px; max-width: 124px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mia-bubble { transition: none !important; }
+}
+
 /* ---------- build version tag ---------- */
 #build-tag {
   text-align: center;

@@ -4,12 +4,13 @@ import { settings, setReducedMotion, setAutoHint, setHaptics } from './settings.
 import { getTopScore } from './highscores.js';
 import { PIECE_TYPES } from './pieces.js';
 import { loadGemImages } from './gemImages.js';
+import { MiaCompanion } from './mia-companion.js';
 
 // Picks up assets/gems/<id>.svg if/when the art collaborator's branch
 // supplies them; a safe no-op today since those files don't exist yet.
 loadGemImages(PIECE_TYPES.map((p) => p.id));
 
-const BUILD_VERSION = 'v0.2.0-dev · gameplay-ux';
+const BUILD_VERSION = 'v0.3.0-dev · mia-music';
 
 const menu = document.getElementById('menu');
 const play = document.getElementById('play');
@@ -36,6 +37,30 @@ const reducedMotionToggle = document.getElementById('reduced-motion-toggle');
 const autoHintToggle = document.getElementById('auto-hint-toggle');
 const hapticsToggle = document.getElementById('haptics-toggle');
 const buildTag = document.getElementById('build-tag');
+const miaVoiceMenu = document.getElementById('mia-voice-toggle');
+const miaVoiceInGame = document.getElementById('mia-voice-in-game');
+const mia = new MiaCompanion({
+  portrait: document.getElementById('mia-portrait'),
+  expression: document.getElementById('mia-expression'),
+  bubble: document.getElementById('mia-bubble'),
+  endLine: document.getElementById('end-mia-line'),
+});
+
+function updateMiaVoiceControls() {
+  miaVoiceMenu.checked = mia.voiceEnabled;
+  miaVoiceInGame.checked = mia.voiceEnabled;
+  miaVoiceMenu.disabled = !mia.voiceAvailable;
+  miaVoiceInGame.disabled = !mia.voiceAvailable;
+  const title = mia.voiceAvailable ? 'Optional spoken Mia dialogue' : 'Voice unavailable in this browser';
+  miaVoiceMenu.title = title;
+  miaVoiceInGame.title = title;
+}
+function changeMiaVoice(e) {
+  mia.setVoiceEnabled(e.target.checked);
+  updateMiaVoiceControls();
+}
+miaVoiceMenu.addEventListener('change', changeMiaVoice);
+miaVoiceInGame.addEventListener('change', changeMiaVoice);
 
 let session = null;
 let lastModeKey = 'classic';
@@ -102,10 +127,15 @@ function startGame(modeKey) {
 
   session = new GameSession(canvas, modeKey, {
     onScore: (total) => { scoreVal.textContent = String(total); },
-    onLevelUp: (level) => { levelVal.textContent = String(level); },
+    onLevelUp: (level) => { levelVal.textContent = String(level); mia.onLevelUp(); },
+    onCombo: (info) => mia.onCombo(info),
+    onHint: (kind) => mia.react(kind === 'manual' ? 'hint_manual' : 'hint_auto'),
+    onShuffle: () => mia.react('reshuffle'),
+    onInvalidSwap: () => mia.react('invalid_swap'),
     onTick: (left) => { timerVal.textContent = formatTime(left); },
     onEnd: (finalScoreVal, isNewTop) => showEnd(finalScoreVal, isNewTop),
   });
+  mia.start(modeKey);
   session.start();
 }
 
@@ -115,6 +145,7 @@ function showEnd(score, isNewTop) {
   finalScore.textContent = String(score);
   endTitle.textContent = score >= 3000 ? 'Powerful brew!' : 'Well cast!';
   newRecordBadge.classList.toggle('hidden', !isNewTop);
+  mia.finish(isNewTop);
 }
 
 hintBtn.addEventListener('click', () => {
@@ -126,6 +157,7 @@ restartBtn.addEventListener('click', () => {
   if (restartArmedTimeout) {
     disarmRestart();
     session.restart();
+    mia.start(lastModeKey);
     return;
   }
   restartBtn.classList.add('confirm');
@@ -156,6 +188,7 @@ menuSoundBtn.addEventListener('click', () => {
 
 reducedMotionToggle.addEventListener('change', () => {
   setReducedMotion(reducedMotionToggle.checked);
+  mia.setReducedMotion(reducedMotionToggle.checked);
 });
 
 autoHintToggle.addEventListener('change', () => {
@@ -168,6 +201,7 @@ hapticsToggle.addEventListener('change', () => {
 
 document.getElementById('menu-btn').addEventListener('click', () => {
   session?.end();
+  mia.stop();
   play.classList.add('hidden');
   endOverlay.classList.add('hidden');
   menu.classList.remove('hidden');
@@ -183,6 +217,7 @@ document.getElementById('play-again-btn').addEventListener('click', () => {
 
 document.getElementById('back-to-menu-btn').addEventListener('click', () => {
   endOverlay.classList.add('hidden');
+  mia.stop();
   menu.classList.remove('hidden');
 });
 
@@ -190,6 +225,8 @@ reducedMotionToggle.checked = settings.reducedMotion;
 autoHintToggle.checked = settings.autoHint;
 hapticsToggle.checked = settings.haptics;
 buildTag.textContent = BUILD_VERSION;
+mia.setReducedMotion(settings.reducedMotion);
+updateMiaVoiceControls();
 updateSoundIcons();
 updateMusicControls();
 renderModeCards();

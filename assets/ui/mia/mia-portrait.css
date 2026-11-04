@@ -1,0 +1,54 @@
+/* Reusable portrait micro-animation; uses the game's existing Mia image untouched. */
+.mia-portrait {
+  --mia-size: 278px;
+  position: relative;
+  display: block;
+  width: min(100%, var(--mia-size));
+  aspect-ratio: 1221 / 1289;
+  margin-inline: auto;
+  isolation: isolate;
+  transform-origin: 52% 68%;
+}
+.mia-portrait__body,
+.mia-portrait__expression {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+.mia-portrait__body { animation: mia-breathe 4.8s ease-in-out infinite; transform-origin: 54% 68%; }
+.mia-portrait__expression { animation: mia-breathe 4.8s ease-in-out infinite; transform-origin: 54% 68%; }
+.mia-portrait[data-state="excited"] .mia-portrait__body,
+.mia-portrait[data-state="excited"] .mia-portrait__expression { animation: mia-celebrate .56s cubic-bezier(.24,.72,.35,1.2) 1; }
+.mia-portrait[data-state="hint"] .mia-portrait__body,
+.mia-portrait[data-state="hint"] .mia-portrait__expression { animation: mia-hint .7s ease-in-out 1; }
+.mia-portrait[data-state="wink"] .mia-portrait__body,
+.mia-portrait[data-state="wink"] .mia-portrait__expression { animation: mia-wiggle .4s ease-in-out 1; }
+.mia-portrait__sparkles {
+  position:absolute; inset: 0; z-index: 2; pointer-events:none;
+  opacity:0; transition: opacity .17s ease-out;
+}
+.mia-portrait[data-state="excited"] .mia-portrait__sparkles,
+.mia-portrait[data-state="hint"] .mia-portrait__sparkles { opacity:1; }
+.mia-portrait__sparkle { position:absolute; width:7%; aspect-ratio:1; transform:translate(-50%,-50%); }
+.mia-portrait__sparkle::before, .mia-portrait__sparkle::after { content:""; position:absolute; background:#FFE07A; box-shadow:0 0 7px #FFAD4F; }
+.mia-portrait__sparkle::before {left:42%; width:16%; height:100%; border-radius:60%;}
+.mia-portrait__sparkle::after {top:42%; height:16%; width:100%; border-radius:60%;}
+.mia-portrait__sparkle:nth-child(1) {left:18%; top:16%; animation:mia-twinkle .75s ease-in-out infinite alternate;}
+.mia-portrait__sparkle:nth-child(2) {left:87%; top:37%; animation:mia-twinkle .85s ease-in-out .15s infinite alternate;}
+.mia-portrait__sparkle:nth-child(3) {left:66%; top:14%; animation:mia-twinkle 1s ease-in-out .25s infinite alternate;}
+@keyframes mia-breathe {0%,100% {transform:translateY(0) scale(1)} 50% {transform:translateY(-2.5%) scale(1.013)}}
+@keyframes mia-celebrate {0% {transform:translateY(0) rotate(0)} 38% {transform:translateY(-6%) rotate(-3deg)} 65% {transform:translateY(-2%) rotate(3deg)} 100% {transform:translateY(0) rotate(0)}}
+@keyframes mia-hint {0% {transform:rotate(0)} 40% {transform:rotate(4deg)} 100% {transform:rotate(0)}}
+@keyframes mia-wiggle {0%,100% {transform:rotate(0)} 28% {transform:rotate(-3deg)} 72% {transform:rotate(3deg)}}
+@keyframes mia-twinkle {0% {transform:scale(.6);opacity:.45} 100% {transform:scale(1.3);opacity:1}}
+@media (prefers-reduced-motion: reduce) {
+  .mia-portrait__body, .mia-portrait__expression, .mia-portrait__sparkle { animation: none !important; }
+  .mia-portrait__sparkles { transition: none; }
+}
+.mia-portrait[data-reduced-motion="true"] .mia-portrait__body,
+.mia-portrait[data-reduced-motion="true"] .mia-portrait__expression,
+.mia-portrait[data-reduced-motion="true"] .mia-portrait__sparkle { animation: none !important; }

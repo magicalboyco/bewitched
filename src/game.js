@@ -53,6 +53,7 @@ export class GameSession {
       onParticles: (pts) => this.renderer.addParticles(pts),
       onCombo: (info) => {
         this.renderer.handleCombo(info);
+        this.hooks.onCombo?.(info);
         if (info.comboKind && info.comboKind !== 'solo-activation') {
           audio.playComboSwap();
           haptics.comboSwap();
@@ -117,6 +118,7 @@ export class GameSession {
     if (found) {
       audio.playHint();
       this._touch();
+      this.hooks.onHint?.('manual');
     }
     return found;
   }
@@ -160,6 +162,7 @@ export class GameSession {
         if (found) {
           audio.playHint();
           this._touch();
+          this.hooks.onHint?.('auto');
         }
       }
     }, 1000);

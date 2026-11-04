@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=PT+Serif+Caption&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/ui/mia/mia-portrait.css">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -19,6 +20,7 @@
         <div class="menu-copy">
           <p class="kicker">A Joy Haus Game</p>
           <h1>BEWITCHED</h1>
+          <img class="menu-moon-divider" src="assets/ui/moon-divider.svg" alt="" aria-hidden="true">
           <p class="tagline">
             Mia de los Muertos, a powerful Mexican bruja and keeper of the
             Book of Shadows, needs your help. Swap crystals, herbs and charms to
@@ -30,6 +32,7 @@
             <label><input type="checkbox" id="reduced-motion-toggle"> Reduce motion &amp; flashing effects</label>
             <label><input type="checkbox" id="auto-hint-toggle"> Suggest a move when I'm stuck</label>
             <label><input type="checkbox" id="haptics-toggle"> Vibrate on matches (mobile)</label>
+            <label><input type="checkbox" id="mia-voice-toggle"> Mia's voice (optional)</label>
           </div>
         </div>
       </div>
@@ -51,7 +54,14 @@
         </div>
 
         <div class="panel-block portrait-frame">
-          <img src="assets/mia-de-los-muertos.webp" alt="Mia de los Muertos">
+          <div id="mia-portrait" class="mia-portrait" data-state="idle">
+            <img class="mia-portrait__body" src="assets/mia-de-los-muertos.webp" alt="Mia de los Muertos">
+            <img id="mia-expression" class="mia-portrait__expression" alt="" aria-hidden="true" hidden>
+            <div class="mia-portrait__sparkles" aria-hidden="true">
+              <span class="mia-portrait__sparkle"></span><span class="mia-portrait__sparkle"></span><span class="mia-portrait__sparkle"></span>
+            </div>
+          </div>
+          <div id="mia-bubble" class="mia-bubble" role="status" aria-live="polite" aria-atomic="true" hidden></div>
         </div>
 
         <div class="panel-block stat-grid">
@@ -76,6 +86,7 @@
         <div class="music-mixer panel-block">
           <label for="music-volume">☾ Moonlight music <span id="music-volume-label">44%</span></label>
           <input id="music-volume" type="range" min="0" max="100" value="44" aria-label="Music volume">
+          <label class="mia-voice-play-control"><input id="mia-voice-in-game" type="checkbox"> Mia's voice <span>optional</span></label>
         </div>
       </aside>
 
@@ -93,6 +104,7 @@
           <p class="tagline">Final score</p>
           <p class="final-score" id="final-score">0</p>
           <p class="new-record-badge hidden" id="new-record-badge">✨ New top score! ✨</p>
+          <p id="end-mia-line" class="end-mia-line" aria-live="polite">¡Eso! You did it, apprentice!</p>
           <button id="play-again-btn" class="pill solid">Play again</button>
           <button id="back-to-menu-btn" class="pill ghost">Back to menu</button>
         </div>

@@ -1,4 +1,5 @@
 // Original, low-volume whimsigoth score and puzzle sound design.
+import { MoonlitScorePlayer } from './music/score-player.js';
 // All notes are synthesized locally with Web Audio; no copyrighted recordings.
 const MUTE_KEY = 'bewitched-muted';
 const MUSIC_KEY = 'bewitched-music-enabled';
@@ -81,53 +82,19 @@ class AudioEngine {
   playLevelUp(){this.ensure();[392,493.88,587.33,783.99].forEach((f,i)=>this._note(f,{start:i*.12,length:.48,gain:.11,kind:'triangle'}));}
   playGameOver(){this.ensure();[440,392,329.63].forEach((f,i)=>this._note(f,{start:i*.2,length:.48,gain:.06}));}
 
-  // A deliberate, slow 4-bar progression: Am(add9), Fmaj7, Cmaj7, G(add9).
-  // Repeating melody has phrasing and silence rather than random notes.
-  // One phrase is 16 seconds at ~60 BPM.
-  _schedulePhrase(phraseStart,barIndex){
-    const chords=[
-      [110,164.81,220,246.94],
-      [87.31,130.81,174.61,220],
-      [130.81,164.81,196,246.94],
-      [98,146.83,196,220]
-    ];
-    const melodies=[
-      [[0.5,659.25],[2.25,587.33]],
-      [[.75,523.25],[2.75,440]],
-      [[.25,493.88],[2.0,523.25],[3.0,587.33]],
-      [[.75,440],[2.5,392]]
-    ];
-    // Timed by AudioContext to avoid rhythmic drift.
-    const delay=phraseStart-this.ctx.currentTime;
-    chords[barIndex].forEach((f,i)=>{
-      this._note(f,{start:delay,length:3.8,gain:i===0?.028:.019,attack:1.1,kind:'sine',bus:'music'});
-      if(i>0)this._note(f*2,{start:delay+.06,length:3.3,gain:.009,attack:1.0,kind:'triangle',bus:'music'});
-    });
-    melodies[barIndex].forEach(([beat,f])=>{
-      this._note(f,{start:delay+beat,length:1.25,gain:.053,attack:.045,kind:'sine',bus:'music'});
-      this._note(f*2,{start:delay+beat+.02,length:.76,gain:.012,attack:.025,kind:'triangle',bus:'music'});
-    });
-  }
+  // Original 16-bar score from src/music/zen-score.js, with Web Audio lookahead.
   startAmbient(){
-    this.ensure();if(!this.ctx||this.ambient)return;
+    this.ensure();
+    if(!this.ctx||this.ambient)return;
     this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*.22:0,this.ctx.currentTime,.12);
-    let next=this.ctx.currentTime+.08,bar=0;
-    const schedule=()=>{
-      if(!this.ctx||!this.ambient)return;
-      while(next<this.ctx.currentTime+4.5){
-        this._schedulePhrase(next,bar);
-        next+=4;bar=(bar+1)%4;
-      }
-    };
-    this.ambient={interval:null};
-    schedule();
-    this.ambient.interval=setInterval(schedule,500);
+    this.ambient = new MoonlitScorePlayer(this.ctx,this.musicBus);
+    this.ambient.start();
   }
   stopAmbient(){
     if(!this.ambient)return;
-    clearInterval(this.ambient.interval);
+    this.ambient.stop();
     this.ambient=null;
-    if(this.ctx)this.musicBus.gain.setTargetAtTime(0,this.ctx.currentTime,.25);
+    if(this.ctx)this.musicBus.gain.setTargetAtTime(0,this.ctx.currentTime,.15);
   }
 }
 export const audio=new AudioEngine();
