@@ -21,6 +21,11 @@ const COMBO_KIND_CALLOUTS = {
   'crystalball-crystalball': 'Twin Crystal Balls!',
 };
 
+const SPAWN_KIND_CALLOUTS = {
+  comet: 'A Comet Falls!',
+  witchfire: 'Witchfire Kindled!',
+};
+
 export class BoardRenderer {
   constructor(canvas, board) {
     this.canvas = canvas;
@@ -69,7 +74,7 @@ export class BoardRenderer {
   }
 
   /** Called from game.js on every Board#onCombo event. */
-  handleCombo({ scoreGain, combo, points, hadPower, comboKind }) {
+  handleCombo({ scoreGain, combo, points, hadPower, spawnKinds = [], comboKind }) {
     if (!points.length) return;
     const cx = points.reduce((s, p) => s + p.col, 0) / points.length;
     const cy = points.reduce((s, p) => s + p.row, 0) / points.length;
@@ -78,11 +83,17 @@ export class BoardRenderer {
     this._addPopup(x, y, `+${scoreGain}`);
 
     const comboKindText = comboKind && comboKind !== 'solo-activation' ? COMBO_KIND_CALLOUTS[comboKind] : null;
-    const calloutText = comboKindText || (combo >= 6 ? COMBO_CALLOUT_MAX : COMBO_CALLOUTS[combo]);
+    const rareSpawn = spawnKinds.find((k) => SPAWN_KIND_CALLOUTS[k]);
+    const spawnText = rareSpawn ? SPAWN_KIND_CALLOUTS[rareSpawn] : null;
+    const calloutText = comboKindText || spawnText || (combo >= 6 ? COMBO_CALLOUT_MAX : COMBO_CALLOUTS[combo]);
     if (calloutText) this._setCallout(calloutText);
 
     if (!settings.reducedMotion && (hadPower || comboKindText)) {
-      const bigFlash = comboKind === 'spark-spark' || comboKind === 'spark-crystalball' || comboKind === 'crystalball-crystalball';
+      const bigFlash =
+        comboKind === 'spark-spark' ||
+        comboKind === 'spark-crystalball' ||
+        comboKind === 'crystalball-crystalball' ||
+        spawnText;
       this.flash = {
         born: performance.now(),
         color: bigFlash ? 'rgba(185,164,255,0.45)' : 'rgba(255,226,150,0.35)',

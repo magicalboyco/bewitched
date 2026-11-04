@@ -116,17 +116,32 @@ function star(ctx,x,y,size,alpha=1) {
   ctx.fill();
   ctx.restore();
 }
+// Each special kind gets its own halo color and orbiting-star count so
+// they read as distinct at a glance: gold Sparks, violet Crystal Balls,
+// ember Comets (the 6-in-a-row tier — row + column + color, all at once),
+// emerald Witchfire (the L/T-shape tier — a 3x3 burst).
+const SPECIAL_HUES = {
+  'spark-row': '#ffe3a0',
+  'spark-col': '#ffe3a0',
+  crystalball: '#b9a4ff',
+  comet: '#ffb37a',
+  witchfire: '#8bffc0',
+};
+const SPECIAL_COUNTS = { crystalball: 6, comet: 8, witchfire: 5 };
+
 function drawSpecial(ctx,special,cx,cy,r,t) {
   const ball=special==='crystalball';
+  const comet=special==='comet';
+  const witchfire=special==='witchfire';
   const reduced=settings.reducedMotion;
   const phase=reduced?0:t*2.5;
   const pulse=reduced?0.5:.5+.5*Math.sin(phase*2.6);
-  const hue=ball?'#b9a4ff':'#ffe3a0';
+  const hue=SPECIAL_HUES[special]||'#ffe3a0';
   // Halo sits outside the jewel, not a slash drawn across its artwork.
   ctx.save();
   const halo=ctx.createRadialGradient(cx,cy,r*.36,cx,cy,r*1.55);
-  halo.addColorStop(0,ball?'rgba(206,178,255,.20)':'rgba(255,226,150,.20)');
-  halo.addColorStop(.72,ball?'rgba(166,125,255,.15)':'rgba(255,218,115,.13)');
+  halo.addColorStop(0,hue+'33');
+  halo.addColorStop(.72,hue+'22');
   halo.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=halo;
   ctx.globalAlpha=.73+pulse*.27;
@@ -138,21 +153,28 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
   ctx.shadowBlur=r*(.38+pulse*.42);
   ctx.globalAlpha=.55+pulse*.4;
   ctx.beginPath();ctx.arc(cx,cy,r*1.12,phase,phase+Math.PI*1.35);ctx.stroke();
+  if(comet||witchfire){
+    // A second, counter-rotating ring for the two rarer tiers.
+    ctx.beginPath();ctx.arc(cx,cy,r*1.3,-phase*1.3,-phase*1.3+Math.PI*1.1);ctx.stroke();
+  }
 
-  const count=ball?6:4;
+  const count=SPECIAL_COUNTS[special]||4;
   for(let i=0;i<count;i++){
     const a=phase*(i%2===0?1:-.75)+i*2*Math.PI/count;
     const d=r*(1.12+.1*Math.sin(t*3+i));
-    const size=r*(ball?.12:.10)*(0.72+0.28*Math.sin(t*4+i*2)**2);
+    const size=r*(SPECIAL_COUNTS[special]?.12:.10)*(0.72+0.28*Math.sin(t*4+i*2)**2);
     star(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,size,.62+.38*pulse);
   }
-  star(ctx,cx-r*.3,cy-r*.4,r*(ball?.24:.17),.45+.55*pulse);
+  star(ctx,cx-r*.3,cy-r*.4,r*(ball||comet?.24:.17),.45+.55*pulse);
   if(ball){
     ctx.strokeStyle='#f7dfff';
     ctx.lineWidth=Math.max(1,r*.05);
     ctx.globalAlpha=.5+.4*pulse;
     ctx.beginPath();ctx.arc(cx,cy,r*.68,0,Math.PI*2);ctx.stroke();
     star(ctx,cx+r*.12,cy-r*.06,r*.24,.75+.25*pulse);
+  } else if(comet){
+    // A bright, oversized core — the "biggest" special on the board.
+    star(ctx,cx,cy,r*.3,.8+.2*pulse);
   }
   ctx.restore();
 }
@@ -194,7 +216,7 @@ export function drawPiece(ctx,typeId,cx,cy,r,{special=null,glowT=0}={}) {
   if(special){
     const reduced=settings.reducedMotion;
     ctx.save();
-    ctx.shadowColor=special==='crystalball'?'#b9a4ff':'#ffe3a0';
+    ctx.shadowColor=SPECIAL_HUES[special]||'#ffe3a0';
     ctx.shadowBlur=reduced?r*.5:r*(.6+.45*Math.sin(glowT*3)**2);
     drawJewel(ctx,type,cx,cy,r);
     ctx.restore();

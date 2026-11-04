@@ -24,8 +24,14 @@ cascades for combo multipliers.
 
 - **Match 4** in a line creates a **Spark Charm** — matching or swapping it
   clears its whole row or column. A small gold arrow on the gem shows which.
-- **Match 5+** creates a **Crystal Ball** — matching or swapping it clears
+- **Match 5** creates a **Crystal Ball** — matching or swapping it clears
   every piece of that gem's color from the board.
+- **Match 6+** in a straight line creates a **Comet** — the biggest single
+  charm: clears its whole row *and* column *and* every piece of its color,
+  all at once.
+- **Match an L or T shape** (a 3-run and a 3-run crossing at a corner, both
+  exactly 3 long) creates **Witchfire** instead of two separate clears —
+  matching or swapping it bursts a 3x3 area.
 - **Swap two specials into each other** to combine them — this always
   activates, even though it doesn't form a 3-match on its own:
   - **Spark + Spark** clears both their rows/columns at once (a cross if

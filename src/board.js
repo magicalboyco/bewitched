@@ -16,7 +16,7 @@ function makeCell(type, row, col) {
   return {
     id: nextId++,
     type,
-    special: null, // null | 'spark-row' | 'spark-col' | 'crystalball'
+    special: null, // null | 'spark-row' | 'spark-col' | 'crystalball' | 'comet' | 'witchfire'
     row,
     col,
     fromRow: row,
@@ -258,35 +258,47 @@ export class Board {
       const cell = this.grid[pos.row][pos.col];
       if (!cell || !cell.special || triggered.has(cell.id)) continue;
       triggered.add(cell.id);
-      if (cell.special === 'spark-row') {
-        for (let c = 0; c < this.cols; c++) {
-          const p = { row: cell.row, col: c };
-          if (!removedSet.has(key(p.row, p.col))) {
-            removedSet.set(key(p.row, p.col), p);
-            queue.push(p);
+      if (cell.special === 'spark-row' || cell.special === 'comet') {
+        this._addRow(removedSet, queue, cell.row);
+      }
+      if (cell.special === 'spark-col' || cell.special === 'comet') {
+        this._addCol(removedSet, queue, cell.col);
+      }
+      if (cell.special === 'crystalball' || cell.special === 'comet') {
+        this._addColor(removedSet, queue, cell.type);
+      }
+      if (cell.special === 'witchfire') {
+        for (let dr = -1; dr <= 1; dr++) {
+          for (let dc = -1; dc <= 1; dc++) {
+            const r = cell.row + dr;
+            const c = cell.col + dc;
+            if (r < 0 || r >= this.rows || c < 0 || c >= this.cols) continue;
+            this._addCell(removedSet, queue, r, c);
           }
         }
-      } else if (cell.special === 'spark-col') {
-        for (let r = 0; r < this.rows; r++) {
-          const p = { row: r, col: cell.col };
-          if (!removedSet.has(key(p.row, p.col))) {
-            removedSet.set(key(p.row, p.col), p);
-            queue.push(p);
-          }
-        }
-      } else if (cell.special === 'crystalball') {
-        for (let r = 0; r < this.rows; r++) {
-          for (let c = 0; c < this.cols; c++) {
-            const t = this.grid[r][c];
-            if (t && t.type === cell.type) {
-              const p = { row: r, col: c };
-              if (!removedSet.has(key(p.row, p.col))) {
-                removedSet.set(key(p.row, p.col), p);
-                queue.push(p);
-              }
-            }
-          }
-        }
+      }
+    }
+  }
+
+  _addCell(removedSet, queue, r, c) {
+    if (removedSet.has(key(r, c))) return;
+    const p = { row: r, col: c };
+    removedSet.set(key(r, c), p);
+    queue.push(p);
+  }
+
+  _addRow(removedSet, queue, row) {
+    for (let c = 0; c < this.cols; c++) this._addCell(removedSet, queue, row, c);
+  }
+
+  _addCol(removedSet, queue, col) {
+    for (let r = 0; r < this.rows; r++) this._addCell(removedSet, queue, r, col);
+  }
+
+  _addColor(removedSet, queue, type) {
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        if (this.grid[r][c]?.type === type) this._addCell(removedSet, queue, r, c);
       }
     }
   }
@@ -333,6 +345,7 @@ export class Board {
         cellCount: removedSet.size,
         points: particlePts,
         hadPower: spawns.length > 0,
+        spawnKinds: spawns.map((s) => s.special),
         comboKind: extra.comboKind || null,
       });
     }
@@ -393,13 +406,36 @@ export class Board {
 
       const removedSet = new Map(); // key -> {row,col}
       const spawns = []; // {row, col, special, type}
-      groups.forEach((g) => {
-        g.cells.forEach((c) => removedSet.set(key(c.row, c.col), c));
-        if (g.cells.length >= 5) {
-          const mid = g.cells[Math.floor(g.cells.length / 2)];
+      groups.forEach((g) => g.cells.forEach((c) => removedSet.set(key(c.row, c.col), c)));
+
+      // An L/T shape — a row-run and a column-run of exactly 3 sharing a
+      // corner cell — is worth more than either run alone, so it becomes
+      // one Witchfire charm instead of two plain 3-clears. Only the plain
+      // 3+3 case is handled; a run of 4+ crossing another run still just
+      // resolves as its own independent spawn below (keeps the shape
+      // detection simple and unambiguous).
+      const consumed = new Set();
+      for (let i = 0; i < groups.length; i++) {
+        if (consumed.has(i) || groups[i].orientation !== 'row' || groups[i].cells.length !== 3) continue;
+        for (let j = 0; j < groups.length; j++) {
+          if (consumed.has(j) || groups[j].orientation !== 'col' || groups[j].cells.length !== 3) continue;
+          const corner = groups[i].cells.find((a) => groups[j].cells.some((b) => a.row === b.row && a.col === b.col));
+          if (!corner) continue;
+          spawns.push({ row: corner.row, col: corner.col, special: 'witchfire', type: groups[i].type });
+          consumed.add(i);
+          consumed.add(j);
+          break;
+        }
+      }
+
+      groups.forEach((g, idx) => {
+        if (consumed.has(idx)) return;
+        const mid = g.cells[Math.floor(g.cells.length / 2)];
+        if (g.cells.length >= 6) {
+          spawns.push({ row: mid.row, col: mid.col, special: 'comet', type: g.type });
+        } else if (g.cells.length >= 5) {
           spawns.push({ row: mid.row, col: mid.col, special: 'crystalball', type: g.type });
         } else if (g.cells.length === 4) {
-          const mid = g.cells[Math.floor(g.cells.length / 2)];
           spawns.push({
             row: mid.row,
             col: mid.col,
