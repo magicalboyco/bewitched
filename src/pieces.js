@@ -160,7 +160,8 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
   const comet=special==='comet';
   const witchfire=special==='witchfire';
   const reduced=settings.reducedMotion;
-  const phase=reduced?0:t*2.5;
+  const motionT=reduced?0:t; // freeze every t-driven wobble below, not just phase
+  const phase=motionT*2.5;
   const pulse=reduced?0.5:.5+.5*Math.sin(phase*2.6);
   const hue=SPECIAL_HUES[special]||'#ffe3a0';
   // Halo sits outside the jewel, not a slash drawn across its artwork.
@@ -184,13 +185,13 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
     ctx.beginPath();ctx.arc(cx,cy,r*1.3,-phase*1.3,-phase*1.3+Math.PI*1.1);ctx.stroke();
   }
 
-  if(comet) cometTail(ctx,cx,cy,r,reduced?0:t,COMET_TAIL_HUE);
+  if(comet) cometTail(ctx,cx,cy,r,motionT,COMET_TAIL_HUE);
 
   const count=SPECIAL_COUNTS[special]||4;
   for(let i=0;i<count;i++){
     const a=phase*(i%2===0?1:-.75)+i*2*Math.PI/count;
-    const d=r*(1.12+.1*Math.sin(t*3+i));
-    const size=r*(SPECIAL_COUNTS[special]?.12:.10)*(0.72+0.28*Math.sin(t*4+i*2)**2);
+    const d=r*(1.12+.1*Math.sin(motionT*3+i));
+    const size=r*(SPECIAL_COUNTS[special]?.12:.10)*(0.72+0.28*Math.sin(motionT*4+i*2)**2);
     const alpha=.62+.38*pulse;
     if(witchfire && i%2===1){
       // Alternate coral and ember-gold glints for a two-tone flame swirl.
