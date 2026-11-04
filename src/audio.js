@@ -69,6 +69,13 @@ class AudioEngine {
     [1,1.25,1.5].forEach((ratio,i)=>this._note(base*ratio,{start:i*.067,length:.26,gain:.09,kind:i?'sine':'triangle'}));
   }
   playPower(){this.ensure();[392,523.25,659.25,880].forEach((f,i)=>this._note(f,{start:i*.065,length:.38,gain:.12,kind:'triangle'}));}
+  // A grander sting for a deliberate special+special combo swap: a quick
+  // rising sweep into a held chord, distinct from a single power-up's chime.
+  playComboSwap(){
+    this.ensure();
+    [261.63,329.63,392,523.25,659.25].forEach((f,i)=>this._note(f,{start:i*.035,length:.07,gain:.08,kind:'triangle'}));
+    [523.25,659.25,784].forEach((f,i)=>this._note(f,{start:.19,length:.55,gain:.1,kind:'sine'}));
+  }
   playShuffle(){this.ensure();[523,440,392].forEach((f,i)=>this._note(f,{start:i*.065,length:.19,gain:.055}));}
   playHint(){this.ensure();[784,988].forEach((f,i)=>this._note(f,{start:i*.13,length:.35,gain:.055}));}
   playLevelUp(){this.ensure();[392,493.88,587.33,783.99].forEach((f,i)=>this._note(f,{start:i*.12,length:.48,gain:.11,kind:'triangle'}));}

@@ -22,15 +22,34 @@ also works). A swap that lines up 3+ matching pieces clears them and scores
 points; everything above falls to fill the gaps, which can chain into
 cascades for combo multipliers.
 
-- **Match 4** in a line creates a **Spark Charm** — swap or match it and it
-  clears its whole row or column.
-- **Match 5+** creates a **Crystal Ball** — swap or match it and it clears
-  every piece of one color from the board.
-- In Classic mode, the game ends when no valid moves remain. Other modes
-  reshuffle automatically.
-- Stuck? The **Hint** button (💡) finds a valid move and flashes it in gold.
-- The **sound** button (🔊/🔇) mutes/unmutes both music and effects; the
-  choice is remembered between visits.
+- **Match 4** in a line creates a **Spark Charm** — matching or swapping it
+  clears its whole row or column. A small gold arrow on the gem shows which.
+- **Match 5+** creates a **Crystal Ball** — matching or swapping it clears
+  every piece of that gem's color from the board.
+- **Swap two specials into each other** to combine them — this always
+  activates, even though it doesn't form a 3-match on its own:
+  - **Spark + Spark** clears both their rows/columns at once (a cross if
+    one is a row-charm and the other a column-charm).
+  - **Spark + Crystal Ball** clears a whole color *and* sweeps a row/column
+    through it.
+  - **Crystal Ball + Crystal Ball** clears two whole colors at once.
+  - Swapping a single special into a plain piece (with no 3-match result)
+    also activates it solo, rather than reverting like a normal invalid
+    swap would.
+- In Classic mode, the game ends when no valid moves remain — special
+  combinations count as a move, so the board won't call it quits while one
+  is still available. Other modes reshuffle automatically instead.
+- Stuck? The **Hint** button (💡) finds a valid move (including a special
+  combo) and flashes it in gold. A hint also appears on its own after ~8s
+  idle, unless turned off in the menu's "Suggest a move when I'm stuck"
+  setting.
+- **Restart** (🔄) re-deals the board mid-run; tap once to arm it, tap again
+  within 3 seconds to confirm.
+- The **sound** button (🔊/🔇) mutes/unmutes SFX; **♫** and the slider
+  control the ambient music independently. Both choices persist.
+- "Reduce motion & flashing effects" in the menu dampens pulsing glows,
+  cuts particle counts, and turns off the screen flash on big combos.
+- Each mode keeps its own persistent **Top** score, shown next to **Score**.
 
 ## Game modes
 
@@ -46,26 +65,33 @@ cascades for combo multipliers.
 - `src/util.js` — small math/async helpers (lerp, easing, sleep).
 - `src/palette.js` — the two palettes: bright pastel pieces vs. witchy
   purple/gold/navy/cream UI.
-- `src/pieces.js` — the seven board pieces (Amethyst Shard, Moonstone,
-  Witch's Herb, Star Charm, Marigold Bloom, Love Potion, Crescent Charm),
-  each rendered as a glossy, beveled gem (gradient fill, drop shadow,
-  clipped specular highlight) plus power-up overlay art.
+- `src/pieces.js` — the seven board pieces (Lavender Amethyst, Teal
+  Princess, Verdant Emerald, Sun Citrine, Amber Cushion, Rose Pear,
+  Periwinkle Marquise), each a distinct gem cut rendered as a glossy,
+  faceted jewel, plus power-up glow/orbit art and the Spark Charm
+  direction glyph.
 - `src/board.js` — the `Board` grid: match detection, swap validation,
-  cascade/combo resolution, power-up spawning and triggering, gravity,
-  refill, stuck-board reshuffling, and hint-finding.
+  cascade resolution, power-up spawning, special+special combo swaps
+  (`_resolveComboSwap`), gravity, refill, stuck-board reshuffling, and
+  hint-finding (aware of combo-swap moves, not just 3-matches).
 - `src/render.js` — canvas rendering: dark gradient board backdrop with
-  twinkling dust and a faint rune circle, animated piece positions
-  (swap/fall/pop-in/pop-out), selection glow, hint highlight, match
-  particles.
+  twinkling dust and a faint rune circle, animated piece positions, score
+  popups, combo callouts, a screen flash on big combos, selection/hint
+  glow, match particles — all with reduced-motion variants.
 - `src/input.js` — pointer handling: tap-to-select-then-swap and
   drag-to-swap, both supported on the same canvas.
-- `src/audio.js` — a small synthesized sound engine (Web Audio oscillators
-  only, no audio files): swap/match/invalid/power-up/level-up/game-over
-  SFX plus a soft generative ambient drone, plus the mute toggle.
+- `src/audio.js` — a synthesized sound engine (Web Audio oscillators only,
+  no audio files): SFX, a 4-bar generative ambient score with independent
+  music volume, and persisted mute/volume settings.
+- `src/settings.js` — persisted accessibility/assist prefs (reduced
+  motion, auto-hint).
+- `src/highscores.js` — per-mode persistent top score.
 - `src/game.js` — `GameSession`: mode config, scoring, leveling, the timed
-  countdown, hinting, audio hookup, and win/end state.
-- `src/main.js` — DOM wiring for the menu, side panel (scoreboard, portrait,
-  stats, buttons), and end screen.
+  countdown, manual + idle auto-hint, restart, audio hookup, and win/end
+  state (including reporting high scores).
+- `src/main.js` — DOM wiring for the menu, side panel (scoreboard, top
+  score, portrait, stats, buttons, music mixer), accessibility toggles,
+  and end screen.
 
 ## Art and audio note
 

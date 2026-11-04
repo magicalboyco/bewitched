@@ -15,6 +15,12 @@ const COMBO_CALLOUTS = {
 };
 const COMBO_CALLOUT_MAX = 'Cursed Combo!';
 
+const COMBO_KIND_CALLOUTS = {
+  'spark-spark': 'Double Spark!',
+  'spark-crystalball': 'Charm Unleashed!',
+  'crystalball-crystalball': 'Twin Crystal Balls!',
+};
+
 export class BoardRenderer {
   constructor(canvas, board) {
     this.canvas = canvas;
@@ -63,7 +69,7 @@ export class BoardRenderer {
   }
 
   /** Called from game.js on every Board#onCombo event. */
-  handleCombo({ scoreGain, combo, points, hadPower }) {
+  handleCombo({ scoreGain, combo, points, hadPower, comboKind }) {
     if (!points.length) return;
     const cx = points.reduce((s, p) => s + p.col, 0) / points.length;
     const cy = points.reduce((s, p) => s + p.row, 0) / points.length;
@@ -71,11 +77,16 @@ export class BoardRenderer {
     const y = cy * this.cellSize + this.cellSize / 2;
     this._addPopup(x, y, `+${scoreGain}`);
 
-    const calloutText = combo >= 6 ? COMBO_CALLOUT_MAX : COMBO_CALLOUTS[combo];
+    const comboKindText = comboKind && comboKind !== 'solo-activation' ? COMBO_KIND_CALLOUTS[comboKind] : null;
+    const calloutText = comboKindText || (combo >= 6 ? COMBO_CALLOUT_MAX : COMBO_CALLOUTS[combo]);
     if (calloutText) this._setCallout(calloutText);
 
-    if (hadPower && !settings.reducedMotion) {
-      this.flash = { born: performance.now(), color: 'rgba(255,226,150,0.35)' };
+    if (!settings.reducedMotion && (hadPower || comboKindText)) {
+      const bigFlash = comboKind === 'spark-spark' || comboKind === 'spark-crystalball' || comboKind === 'crystalball-crystalball';
+      this.flash = {
+        born: performance.now(),
+        color: bigFlash ? 'rgba(185,164,255,0.45)' : 'rgba(255,226,150,0.35)',
+      };
     }
   }
 

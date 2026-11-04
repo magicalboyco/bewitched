@@ -50,7 +50,10 @@ export class GameSession {
     this.board = new Board({
       onScore: (delta, combo) => this._addScore(delta, combo),
       onParticles: (pts) => this.renderer.addParticles(pts),
-      onCombo: (info) => this.renderer.handleCombo(info),
+      onCombo: (info) => {
+        this.renderer.handleCombo(info);
+        if (info.comboKind && info.comboKind !== 'solo-activation') audio.playComboSwap();
+      },
       onShuffle: () => {
         audio.playShuffle();
         this.hooks.onShuffle?.();

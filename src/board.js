@@ -43,7 +43,8 @@ export class Board {
     this.onPower = onPower || (() => {});
     // Fired once per cascade step with everything a UI needs to place a
     // floating score popup / combo callout: the score gained, the combo
-    // tier, and the board cells that were cleared this step.
+    // tier, the board cells that were cleared this step, and — for a
+    // deliberate special+special swap — which kind of combo it was.
     this.onCombo = onCombo || (() => {});
     this.reset();
   }
@@ -128,11 +129,21 @@ export class Board {
   _hasValidMoves(grid) {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
-        if (c + 1 < this.cols && this._swapCreatesMatch(grid, r, c, r, c + 1)) return true;
-        if (r + 1 < this.rows && this._swapCreatesMatch(grid, r, c, r + 1, c)) return true;
+        if (c + 1 < this.cols && this._swapIsPlayable(grid, r, c, r, c + 1)) return true;
+        if (r + 1 < this.rows && this._swapIsPlayable(grid, r, c, r + 1, c)) return true;
       }
     }
     return false;
+  }
+
+  // A swap is playable if it forms a match OR activates a special piece —
+  // trySwap() honors both, so the "any moves left?" checks must agree,
+  // otherwise the board could reshuffle out from under a free special.
+  _swapIsPlayable(grid, r1, c1, r2, c2) {
+    const a = grid[r1][c1];
+    const b = grid[r2][c2];
+    if (a.special || b.special) return true;
+    return this._swapCreatesMatch(grid, r1, c1, r2, c2);
   }
 
   _swapCreatesMatch(grid, r1, c1, r2, c2) {
@@ -151,10 +162,10 @@ export class Board {
   findHint() {
     for (let r = 0; r < this.rows; r++) {
       for (let c = 0; c < this.cols; c++) {
-        if (c + 1 < this.cols && this._swapCreatesMatch(this.grid, r, c, r, c + 1)) {
+        if (c + 1 < this.cols && this._swapIsPlayable(this.grid, r, c, r, c + 1)) {
           return { a: { row: r, col: c }, b: { row: r, col: c + 1 } };
         }
-        if (r + 1 < this.rows && this._swapCreatesMatch(this.grid, r, c, r + 1, c)) {
+        if (r + 1 < this.rows && this._swapIsPlayable(this.grid, r, c, r + 1, c)) {
           return { a: { row: r, col: c }, b: { row: r + 1, col: c } };
         }
       }
@@ -193,6 +204,16 @@ export class Board {
 
     const matches = this._findMatches(this.grid);
     if (matches.length === 0) {
+      // A swap that doesn't form a 3-match still activates if a special
+      // piece is involved — that's the only way to ever combine two
+      // specials (swapping them into each other never makes a run-of-3).
+      const cellAtA = this.grid[a.row][a.col];
+      const cellAtB = this.grid[b.row][b.col];
+      if (cellAtA.special || cellAtB.special) {
+        await this._resolveComboSwap(cellAtA, cellAtB);
+        this.busy = false;
+        return true;
+      }
       // swap back
       this._swapCells(a, b, performance.now());
       await sleep(SWAP_MS + 20);
@@ -224,6 +245,145 @@ export class Board {
     this.grid[b.row][b.col] = ca;
   }
 
+  /**
+   * Expands removedSet/queue to include everything each special piece in
+   * the queue clears (a row, a column, or every piece of its remembered
+   * color) — and recurses when that expansion catches further specials,
+   * so a spark that sweeps through a crystal ball chains into it too.
+   */
+  _expandSpecials(removedSet, queue) {
+    const triggered = new Set();
+    while (queue.length) {
+      const pos = queue.pop();
+      const cell = this.grid[pos.row][pos.col];
+      if (!cell || !cell.special || triggered.has(cell.id)) continue;
+      triggered.add(cell.id);
+      if (cell.special === 'spark-row') {
+        for (let c = 0; c < this.cols; c++) {
+          const p = { row: cell.row, col: c };
+          if (!removedSet.has(key(p.row, p.col))) {
+            removedSet.set(key(p.row, p.col), p);
+            queue.push(p);
+          }
+        }
+      } else if (cell.special === 'spark-col') {
+        for (let r = 0; r < this.rows; r++) {
+          const p = { row: r, col: cell.col };
+          if (!removedSet.has(key(p.row, p.col))) {
+            removedSet.set(key(p.row, p.col), p);
+            queue.push(p);
+          }
+        }
+      } else if (cell.special === 'crystalball') {
+        for (let r = 0; r < this.rows; r++) {
+          for (let c = 0; c < this.cols; c++) {
+            const t = this.grid[r][c];
+            if (t && t.type === cell.type) {
+              const p = { row: r, col: c };
+              if (!removedSet.has(key(p.row, p.col))) {
+                removedSet.set(key(p.row, p.col), p);
+                queue.push(p);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Shared tail end of a cleared batch of cells: score, particles,
+   * onCombo, the remove/collapse/refill animation beats. Spawns (newly
+   * minted special pieces) survive at their pivot cell instead of being
+   * cleared; comboSwap batches never have spawns.
+   */
+  async _processRemoval(removedSet, spawns, combo, extra = {}) {
+    const spawnKeys = new Set();
+    spawns.forEach((s) => {
+      const k = key(s.row, s.col);
+      if (removedSet.has(k)) spawnKeys.add(k);
+    });
+
+    const now = performance.now();
+    const particlePts = [];
+    removedSet.forEach((pos, k) => {
+      const cell = this.grid[pos.row][pos.col];
+      if (!cell) return;
+      particlePts.push({ row: pos.row, col: pos.col, type: cell.type });
+      if (spawnKeys.has(k)) return;
+      cell.removeStart = now;
+    });
+
+    spawns.forEach((s) => {
+      const cell = this.grid[s.row][s.col];
+      if (cell && removedSet.has(key(s.row, s.col))) {
+        cell.special = s.special;
+        cell.popStart = now;
+      }
+    });
+
+    const scoreGain = (removedSet.size - spawnKeys.size) * 10 * combo;
+    if (scoreGain > 0) this.onScore(scoreGain, combo);
+    this.onParticles(particlePts);
+    if (spawns.length > 0) this.onPower();
+    if (scoreGain > 0) {
+      this.onCombo({
+        scoreGain,
+        combo,
+        cellCount: removedSet.size,
+        points: particlePts,
+        hadPower: spawns.length > 0,
+        comboKind: extra.comboKind || null,
+      });
+    }
+
+    await sleep(REMOVE_MS);
+
+    removedSet.forEach((pos, k) => {
+      if (spawnKeys.has(k)) return;
+      this.grid[pos.row][pos.col] = null;
+    });
+
+    this._collapseAndRefill(performance.now());
+    await sleep(FALL_MS);
+  }
+
+  /**
+   * Swapping two special pieces into each other — or a special into a
+   * plain piece with no resulting match — detonates rather than reverts.
+   * Two specials together chain through _expandSpecials simultaneously:
+   * two Sparks clear their rows/columns together (a cross when one is a
+   * row and the other a column), a Spark + Crystal Ball clears a whole
+   * color AND sweeps a row/column, two Crystal Balls clear two colors.
+   */
+  async _resolveComboSwap(cellA, cellB) {
+    const kinds = [cellA.special, cellB.special].filter(Boolean);
+    let comboKind = 'solo-activation';
+    if (kinds.length === 2) {
+      const ballCount = kinds.filter((k) => k === 'crystalball').length;
+      comboKind = ballCount === 2 ? 'crystalball-crystalball' : ballCount === 1 ? 'spark-crystalball' : 'spark-spark';
+    }
+
+    const removedSet = new Map();
+    const queue = [];
+    [cellA, cellB].forEach((cell) => {
+      if (cell.special) {
+        const pos = { row: cell.row, col: cell.col };
+        removedSet.set(key(pos.row, pos.col), pos);
+        queue.push(pos);
+      }
+    });
+    this._expandSpecials(removedSet, queue);
+
+    const combo = kinds.length === 2 ? 2 : 1;
+    await this._processRemoval(removedSet, [], combo, { comboKind });
+
+    // Falling pieces from a big combo clear can themselves form new
+    // matches — resolve those the normal way, including the end-of-turn
+    // no-valid-moves check.
+    await this._resolveCascades({});
+  }
+
   async _resolveCascades({ swapPivot = null } = {}) {
     let combo = 0;
     for (;;) {
@@ -250,97 +410,10 @@ export class Board {
       });
 
       // trigger any specials caught in the blast, expanding the removal set
-      const triggered = new Set();
       const queue = [...removedSet.values()];
-      while (queue.length) {
-        const pos = queue.pop();
-        const cell = this.grid[pos.row][pos.col];
-        if (!cell || !cell.special || triggered.has(cell.id)) continue;
-        triggered.add(cell.id);
-        if (cell.special === 'spark-row') {
-          for (let c = 0; c < this.cols; c++) {
-            const p = { row: cell.row, col: c };
-            if (!removedSet.has(key(p.row, p.col))) {
-              removedSet.set(key(p.row, p.col), p);
-              queue.push(p);
-            }
-          }
-        } else if (cell.special === 'spark-col') {
-          for (let r = 0; r < this.rows; r++) {
-            const p = { row: r, col: cell.col };
-            if (!removedSet.has(key(p.row, p.col))) {
-              removedSet.set(key(p.row, p.col), p);
-              queue.push(p);
-            }
-          }
-        } else if (cell.special === 'crystalball') {
-          for (let r = 0; r < this.rows; r++) {
-            for (let c = 0; c < this.cols; c++) {
-              const t = this.grid[r][c];
-              if (t && t.type === cell.type) {
-                const p = { row: r, col: c };
-                if (!removedSet.has(key(p.row, p.col))) {
-                  removedSet.set(key(p.row, p.col), p);
-                  queue.push(p);
-                }
-              }
-            }
-          }
-        }
-      }
+      this._expandSpecials(removedSet, queue);
 
-      // spawn pivots survive as upgraded pieces instead of being cleared
-      const spawnKeys = new Set();
-      spawns.forEach((s) => {
-        const k = key(s.row, s.col);
-        if (removedSet.has(k)) {
-          spawnKeys.add(k);
-        }
-      });
-
-      const now = performance.now();
-      const particlePts = [];
-      removedSet.forEach((pos, k) => {
-        const cell = this.grid[pos.row][pos.col];
-        if (!cell) return;
-        particlePts.push({ row: pos.row, col: pos.col, type: cell.type });
-        if (spawnKeys.has(k)) return; // becomes a special piece, not removed
-        cell.removeStart = now;
-      });
-
-      // upgrade pivot cells to their special form
-      spawns.forEach((s) => {
-        const cell = this.grid[s.row][s.col];
-        if (cell && removedSet.has(key(s.row, s.col))) {
-          cell.special = s.special;
-          cell.popStart = now;
-        }
-      });
-
-      const scoreGain = (removedSet.size - spawnKeys.size) * 10 * combo;
-      if (scoreGain > 0) this.onScore(scoreGain, combo);
-      this.onParticles(particlePts);
-      if (spawns.length > 0) this.onPower();
-      if (scoreGain > 0) {
-        this.onCombo({
-          scoreGain,
-          combo,
-          cellCount: removedSet.size,
-          points: particlePts,
-          hadPower: spawns.length > 0,
-        });
-      }
-
-      await sleep(REMOVE_MS);
-
-      // null out removed cells, then collapse + refill
-      removedSet.forEach((pos, k) => {
-        if (spawnKeys.has(k)) return;
-        this.grid[pos.row][pos.col] = null;
-      });
-
-      this._collapseAndRefill(performance.now());
-      await sleep(FALL_MS);
+      await this._processRemoval(removedSet, spawns, combo);
     }
 
     if (!this._hasValidMoves(this.grid)) {
