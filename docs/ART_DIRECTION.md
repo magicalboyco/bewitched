@@ -53,7 +53,7 @@ These internal IDs are preserved deliberately. They are **not** license to displ
 
 ## Mia de los Muertos
 
-Use the actual approved illustrated portrait, not the previous simple temporary SVG. Mia is **playful, bubbly, enthusiastic and a little mischievous**, while still supportive and reassuring. Reactions should be earned and infrequent rather than constant; her original portrait, facial features and costume remain unchanged. Depict her Mexican-American cultural context through authentic character details rather than generic skull or Día de los Muertos decoration everywhere.
+Use the actual approved illustrated portrait, not the previous simple temporary SVG. Mia is **playful, bubbly, enthusiastic and a little mischievous**, while still supportive and reassuring. Reactions should be earned and infrequent rather than constant; her original portrait, facial features and costume remain unchanged. Mia is a fictional **Mexican witch (bruja)**, not Mexican-American. Give her a distinctly Mexican identity through thoughtful language, mannerisms and character details, avoiding generic skull or Día de los Muertos motifs everywhere. Her natural dialogue may alternate between Spanish and English when appropriate, but avoid stereotyped catchphrases or an invented exaggerated accent.
 
 ## Audio mood
 
