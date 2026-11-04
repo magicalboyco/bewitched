@@ -11,6 +11,13 @@ export class BoardRenderer {
     this.board = board;
     this.particles = [];
     this.cellSize = canvas.width / board.cols;
+    this.stars = Array.from({ length: 28 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: 0.6 + Math.random() * 1.3,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.6 + Math.random() * 0.8,
+    }));
   }
 
   resize() {
@@ -50,29 +57,74 @@ export class BoardRenderer {
     });
   }
 
-  _drawBackground() {
+  _drawBackground(now) {
     const { ctx, canvas, cellSize, board } = this;
-    ctx.fillStyle = UI.cream;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    const w = canvas.width;
+    const h = canvas.height;
 
-    // faint parchment ruling
-    ctx.strokeStyle = 'rgba(109,61,142,0.08)';
-    ctx.lineWidth = 1;
-    for (let i = 1; i < 6; i++) {
-      const y = (canvas.height / 6) * i;
+    const bg = ctx.createRadialGradient(w / 2, h * 0.38, w * 0.12, w / 2, h / 2, w * 0.75);
+    bg.addColorStop(0, '#3a2250');
+    bg.addColorStop(0.55, '#241638');
+    bg.addColorStop(1, '#150d22');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    // twinkling dust
+    this.stars.forEach((s) => {
+      const tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now / 1000 * s.speed + s.phase));
+      ctx.save();
+      ctx.globalAlpha = tw * 0.8;
+      ctx.fillStyle = UI.lilac;
       ctx.beginPath();
-      ctx.moveTo(10, y);
-      ctx.lineTo(canvas.width - 10, y);
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+
+    // faint rune circle behind the board
+    ctx.save();
+    ctx.globalAlpha = 0.12;
+    ctx.strokeStyle = UI.gold;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, w * 0.42, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(w / 2, h / 2, w * 0.3, 0, Math.PI * 2);
+    ctx.stroke();
+    for (let i = 0; i < 8; i++) {
+      const a = (Math.PI / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(w / 2 + Math.cos(a) * w * 0.3, h / 2 + Math.sin(a) * h * 0.3);
+      ctx.lineTo(w / 2 + Math.cos(a) * w * 0.42, h / 2 + Math.sin(a) * h * 0.42);
       ctx.stroke();
     }
+    ctx.restore();
 
+    // cell checker + hairlines
     for (let r = 0; r < board.rows; r++) {
       for (let c = 0; c < board.cols; c++) {
         const checker = (r + c) % 2 === 0;
-        ctx.fillStyle = checker ? 'rgba(109,61,142,0.06)' : 'rgba(109,61,142,0.0)';
+        ctx.fillStyle = checker ? 'rgba(200,162,77,0.05)' : 'rgba(0,0,0,0.08)';
         ctx.fillRect(c * cellSize, r * cellSize, cellSize, cellSize);
       }
     }
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200,162,77,0.08)';
+    ctx.lineWidth = 1;
+    for (let i = 1; i < board.cols; i++) {
+      ctx.beginPath();
+      ctx.moveTo(i * cellSize, 0);
+      ctx.lineTo(i * cellSize, h);
+      ctx.stroke();
+    }
+    for (let i = 1; i < board.rows; i++) {
+      ctx.beginPath();
+      ctx.moveTo(0, i * cellSize);
+      ctx.lineTo(w, i * cellSize);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   _drawSelection(now) {
@@ -85,11 +137,41 @@ export class BoardRenderer {
     ctx.save();
     ctx.strokeStyle = UI.gold;
     ctx.lineWidth = 3;
+    ctx.shadowColor = UI.gold;
+    ctx.shadowBlur = 10;
     ctx.globalAlpha = 0.6 + pulse * 0.4;
     ctx.beginPath();
     ctx.roundRect(cx - cellSize / 2 + 4, cy - cellSize / 2 + 4, cellSize - 8, cellSize - 8, 10);
     ctx.stroke();
     ctx.restore();
+  }
+
+  _drawHint(now) {
+    const hint = this.board.hint;
+    if (!hint) return;
+    if (now > hint.until) {
+      this.board.clearHint();
+      return;
+    }
+    const { ctx, cellSize } = this;
+    const remain = hint.until - now;
+    const fadeOut = remain < 300 ? remain / 300 : 1;
+    const pulse = 0.5 + 0.5 * Math.sin(now / 130);
+
+    [hint.a, hint.b].forEach((cell) => {
+      const cx = cell.col * cellSize + cellSize / 2;
+      const cy = cell.row * cellSize + cellSize / 2;
+      ctx.save();
+      ctx.globalAlpha = (0.55 + pulse * 0.45) * fadeOut;
+      ctx.strokeStyle = UI.gold;
+      ctx.lineWidth = 4;
+      ctx.shadowColor = UI.gold;
+      ctx.shadowBlur = 16;
+      ctx.beginPath();
+      ctx.roundRect(cx - cellSize / 2 + 3, cy - cellSize / 2 + 3, cellSize - 6, cellSize - 6, 12);
+      ctx.stroke();
+      ctx.restore();
+    });
   }
 
   _drawParticles() {
@@ -112,7 +194,7 @@ export class BoardRenderer {
     const dt = 1 / 60;
     this._updateParticles(now, dt);
 
-    this._drawBackground();
+    this._drawBackground(now);
 
     const { ctx, cellSize, board } = this;
     for (let r = 0; r < board.rows; r++) {
@@ -155,6 +237,7 @@ export class BoardRenderer {
       }
     }
 
+    this._drawHint(now);
     this._drawSelection(now);
     this._drawParticles();
   }

@@ -1,4 +1,4 @@
-export function attachInput(canvas, board, renderer, { onInvalidSwap } = {}) {
+export function attachInput(canvas, board, renderer, { onInvalidSwap, onSwapAttempt } = {}) {
   let dragStart = null; // {row, col}
   let dragHandled = false;
 
@@ -15,6 +15,7 @@ export function attachInput(canvas, board, renderer, { onInvalidSwap } = {}) {
   };
 
   const attemptSwap = async (a, b) => {
+    if (onSwapAttempt) onSwapAttempt();
     const ok = await board.trySwap(a, b);
     if (!ok && onInvalidSwap) onInvalidSwap();
   };

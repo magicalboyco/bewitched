@@ -1,17 +1,21 @@
 import { GameSession, MODES } from './game.js';
+import { audio } from './audio.js';
 
 const menu = document.getElementById('menu');
-const hud = document.getElementById('hud');
+const play = document.getElementById('play');
 const canvas = document.getElementById('board-canvas');
 const endOverlay = document.getElementById('end-overlay');
 const modeList = document.getElementById('mode-list');
 
 const scoreVal = document.getElementById('score-val');
 const levelVal = document.getElementById('level-val');
-const timerPill = document.getElementById('timer-pill');
+const timerBox = document.getElementById('timer-box');
 const timerVal = document.getElementById('timer-val');
 const finalScore = document.getElementById('final-score');
 const endTitle = document.getElementById('end-title');
+const hintBtn = document.getElementById('hint-btn');
+const soundBtn = document.getElementById('sound-btn');
+const menuSoundBtn = document.getElementById('menu-sound-btn');
 
 let session = null;
 let lastModeKey = 'classic';
@@ -39,17 +43,22 @@ function formatTime(sec) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
+function updateSoundIcons() {
+  const icon = audio.muted ? '🔇' : '🔊';
+  soundBtn.textContent = icon;
+  menuSoundBtn.textContent = icon;
+}
+
 function startGame(modeKey) {
   lastModeKey = modeKey;
   menu.classList.add('hidden');
   endOverlay.classList.add('hidden');
-  hud.classList.remove('hidden');
-  canvas.classList.remove('hidden');
+  play.classList.remove('hidden');
 
   scoreVal.textContent = '0';
   levelVal.textContent = '1';
   const mode = MODES[modeKey];
-  timerPill.classList.toggle('hidden', !mode.timed);
+  timerBox.classList.toggle('hidden', !mode.timed);
   timerVal.textContent = mode.timed ? formatTime(mode.duration) : '—';
 
   session = new GameSession(canvas, modeKey, {
@@ -62,17 +71,29 @@ function startGame(modeKey) {
 }
 
 function showEnd(score) {
-  hud.classList.add('hidden');
-  canvas.classList.add('hidden');
+  play.classList.add('hidden');
   endOverlay.classList.remove('hidden');
   finalScore.textContent = String(score);
   endTitle.textContent = score >= 3000 ? 'Powerful brew!' : 'Well cast!';
 }
 
+hintBtn.addEventListener('click', () => {
+  session?.hint();
+});
+
+soundBtn.addEventListener('click', () => {
+  audio.toggleMuted();
+  updateSoundIcons();
+});
+
+menuSoundBtn.addEventListener('click', () => {
+  audio.toggleMuted();
+  updateSoundIcons();
+});
+
 document.getElementById('menu-btn').addEventListener('click', () => {
   session?.end();
-  hud.classList.add('hidden');
-  canvas.classList.add('hidden');
+  play.classList.add('hidden');
   endOverlay.classList.add('hidden');
   menu.classList.remove('hidden');
 });
@@ -90,4 +111,5 @@ document.getElementById('back-to-menu-btn').addEventListener('click', () => {
   menu.classList.remove('hidden');
 });
 
+updateSoundIcons();
 renderModeCards();

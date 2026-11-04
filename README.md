@@ -26,7 +26,11 @@ cascades for combo multipliers.
   clears its whole row or column.
 - **Match 5+** creates a **Crystal Ball** — swap or match it and it clears
   every piece of one color from the board.
-- In Classic mode, the game ends when no valid moves remain. Other modes reshuffle automatically.
+- In Classic mode, the game ends when no valid moves remain. Other modes
+  reshuffle automatically.
+- Stuck? The **Hint** button (💡) finds a valid move and flashes it in gold.
+- The **sound** button (🔊/🔇) mutes/unmutes both music and effects; the
+  choice is remembered between visits.
 
 ## Game modes
 
@@ -44,21 +48,30 @@ cascades for combo multipliers.
   purple/gold/navy/cream UI.
 - `src/pieces.js` — the seven board pieces (Amethyst Shard, Moonstone,
   Witch's Herb, Star Charm, Marigold Bloom, Love Potion, Crescent Charm),
-  drawn procedurally as distinct silhouettes, plus power-up overlay art.
+  each rendered as a glossy, beveled gem (gradient fill, drop shadow,
+  clipped specular highlight) plus power-up overlay art.
 - `src/board.js` — the `Board` grid: match detection, swap validation,
   cascade/combo resolution, power-up spawning and triggering, gravity,
-  refill, and stuck-board reshuffling.
-- `src/render.js` — canvas rendering: board, animated piece positions
-  (swap/fall/pop-in/pop-out), selection glow, match particles.
+  refill, stuck-board reshuffling, and hint-finding.
+- `src/render.js` — canvas rendering: dark gradient board backdrop with
+  twinkling dust and a faint rune circle, animated piece positions
+  (swap/fall/pop-in/pop-out), selection glow, hint highlight, match
+  particles.
 - `src/input.js` — pointer handling: tap-to-select-then-swap and
   drag-to-swap, both supported on the same canvas.
+- `src/audio.js` — a small synthesized sound engine (Web Audio oscillators
+  only, no audio files): swap/match/invalid/power-up/level-up/game-over
+  SFX plus a soft generative ambient drone, plus the mute toggle.
 - `src/game.js` — `GameSession`: mode config, scoring, leveling, the timed
-  countdown, and win/end state.
-- `src/main.js` — DOM wiring for the menu, HUD, and end screen.
+  countdown, hinting, audio hookup, and win/end state.
+- `src/main.js` — DOM wiring for the menu, side panel (scoreboard, portrait,
+  stats, buttons), and end screen.
 
-## Art note
+## Art and audio note
 
-The piece shapes, power-up effects, and UI chrome are original canvas
-drawings built for this project (not traced from any reference). The GitHub preview currently uses an original vector stand-in for Mia.
-The uploaded Mia portrait is included in the downloadable local test archive;
-replace `assets/mia.svg` with the provided artwork when binary asset upload is available.
+The gem rendering, power-up effects, and UI chrome are original canvas
+drawings built for this project (not traced from any reference) — the
+layout takes general inspiration from genre conventions (a glossy gem
+board with a side scoreboard panel) without copying any specific game's
+assets. All sound is procedurally synthesized at runtime, not sampled or
+licensed from anywhere.

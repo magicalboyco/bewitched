@@ -11,7 +11,8 @@
 
     <section id="menu" class="overlay">
       <div class="menu-card">
-        <img id="mascot" class="mascot" src="assets/mia.svg" alt="Mia de los Muertos, the bruja">
+        <button id="menu-sound-btn" class="round-btn small corner" title="Sound">🔊</button>
+        <img id="mascot" class="mascot" src="assets/mia-de-los-muertos.webp" alt="Mia de los Muertos, the bruja">
         <div class="menu-copy">
           <p class="kicker">A Joy Haus Game</p>
           <h1>BEWITCHED</h1>
@@ -25,19 +26,44 @@
       </div>
     </section>
 
-    <header id="hud" class="hidden">
-      <button id="menu-btn" class="pill ghost" title="Back to menu">☰</button>
-      <div class="pill" id="score-pill">Score <span id="score-val">0</span></div>
-      <div class="pill" id="level-pill">Level <span id="level-val">1</span></div>
-      <div class="pill" id="timer-pill">Time <span id="timer-val">—</span></div>
-      <button id="end-btn" class="pill ghost">Finish</button>
-    </header>
+    <div id="play" class="hidden">
+      <aside id="side-panel">
+        <div class="panel-block scoreboard">
+          <div class="led-label">Score</div>
+          <div class="led-display" id="score-val">0</div>
+        </div>
 
-    <canvas id="board-canvas" width="640" height="640"></canvas>
+        <div class="panel-block portrait-frame">
+          <img src="assets/mia-de-los-muertos.webp" alt="Mia de los Muertos">
+        </div>
+
+        <div class="panel-block stat-grid">
+          <div class="stat-box">
+            <div class="stat-label">Level</div>
+            <div class="stat-value" id="level-val">1</div>
+          </div>
+          <div class="stat-box" id="timer-box">
+            <div class="stat-label">Time</div>
+            <div class="stat-value" id="timer-val">—</div>
+          </div>
+        </div>
+
+        <div class="panel-buttons">
+          <button id="hint-btn" class="round-btn" title="Hint">💡</button>
+          <button id="sound-btn" class="round-btn" title="Sound">🔊</button>
+          <button id="menu-btn" class="round-btn" title="Back to menu">☰</button>
+          <button id="end-btn" class="round-btn danger" title="Finish">⏹</button>
+        </div>
+      </aside>
+
+      <div id="board-wrap">
+        <canvas id="board-canvas" width="640" height="640"></canvas>
+      </div>
+    </div>
 
     <section id="end-overlay" class="overlay hidden">
       <div class="menu-card">
-        <img class="mascot small" src="assets/mia.svg" alt="Mia de los Muertos">
+        <img class="mascot small" src="assets/mia-de-los-muertos.webp" alt="Mia de los Muertos">
         <div class="menu-copy">
           <p class="kicker">Spell complete</p>
           <h1 id="end-title">Well cast!</h1>

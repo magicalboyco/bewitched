@@ -1,6 +1,7 @@
 import { Board } from './board.js';
 import { BoardRenderer } from './render.js';
 import { attachInput } from './input.js';
+import { audio } from './audio.js';
 
 export const MODES = {
   classic: {
@@ -51,12 +52,26 @@ export class GameSession {
     this.board = new Board({
       onScore: (delta, combo) => this._addScore(delta, combo),
       onParticles: (pts) => this.renderer.addParticles(pts),
-      onShuffle: () => this.hooks.onShuffle?.(),
-      onNoMoves: () => { if (this.mode.key === 'classic') { this.end(); return true; } return false; },
+      onShuffle: () => {
+        audio.playShuffle();
+        this.hooks.onShuffle?.();
+      },
+      onPower: () => audio.playPower(),
+      onNoMoves: () => {
+        if (this.mode.key === 'classic') {
+          this.end();
+          return true;
+        }
+        return false;
+      },
     });
     this.renderer = new BoardRenderer(canvas, this.board);
     this.detachInput = attachInput(canvas, this.board, this.renderer, {
-      onInvalidSwap: () => this.hooks.onInvalidSwap?.(),
+      onSwapAttempt: () => audio.playSwap(),
+      onInvalidSwap: () => {
+        audio.playInvalid();
+        this.hooks.onInvalidSwap?.();
+      },
     });
 
     this._raf = null;
@@ -65,7 +80,16 @@ export class GameSession {
     this._loop = this._loop.bind(this);
   }
 
+  hint() {
+    if (this.ended) return;
+    const found = this.board.showHint();
+    if (found) audio.playHint();
+    return found;
+  }
+
   start() {
+    audio.ensure();
+    audio.startAmbient();
     this._loop();
     if (this.mode.timed) {
       this._timerInterval = setInterval(() => {
@@ -83,10 +107,12 @@ export class GameSession {
   _addScore(delta, combo) {
     this.score += delta;
     this.combo = combo;
+    audio.playMatch(combo);
     this.levelProgress += delta;
     while (this.levelProgress >= LEVEL_UP_SCORE) {
       this.levelProgress -= LEVEL_UP_SCORE;
       this.level += 1;
+      audio.playLevelUp();
       this.hooks.onLevelUp?.(this.level);
     }
     this.hooks.onScore?.(this.score, delta, combo);
@@ -104,6 +130,8 @@ export class GameSession {
     if (this._timerInterval) clearInterval(this._timerInterval);
     if (this._raf) cancelAnimationFrame(this._raf);
     this.detachInput();
+    audio.playGameOver();
+    audio.stopAmbient();
     this.hooks.onEnd?.(this.score);
   }
 }

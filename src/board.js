@@ -29,16 +29,18 @@ function makeCell(type, row, col) {
 }
 
 export class Board {
-  constructor({ onScore, onParticles, onShuffle } = {}) {
+  constructor({ onScore, onParticles, onShuffle, onNoMoves, onPower } = {}) {
     this.cols = COLS;
     this.rows = ROWS;
     this.grid = [];
     this.busy = false;
     this.selected = null; // {row, col}
+    this.hint = null; // {a:{row,col}, b:{row,col}, until}
     this.onScore = onScore || (() => {});
     this.onParticles = onParticles || (() => {});
     this.onShuffle = onShuffle || (() => {});
-    this.onNoMoves = arguments[0]?.onNoMoves || (() => false);
+    this.onNoMoves = onNoMoves || (() => false);
+    this.onPower = onPower || (() => {});
     this.reset();
   }
 
@@ -50,6 +52,7 @@ export class Board {
     this.grid = grid;
     this.busy = false;
     this.selected = null;
+    this.hint = null;
   }
 
   cellAt(r, c) {
@@ -139,6 +142,34 @@ export class Board {
     return matched;
   }
 
+  // --- hints -----------------------------------------------------------
+
+  findHint() {
+    for (let r = 0; r < this.rows; r++) {
+      for (let c = 0; c < this.cols; c++) {
+        if (c + 1 < this.cols && this._swapCreatesMatch(this.grid, r, c, r, c + 1)) {
+          return { a: { row: r, col: c }, b: { row: r, col: c + 1 } };
+        }
+        if (r + 1 < this.rows && this._swapCreatesMatch(this.grid, r, c, r + 1, c)) {
+          return { a: { row: r, col: c }, b: { row: r + 1, col: c } };
+        }
+      }
+    }
+    return null;
+  }
+
+  showHint() {
+    if (this.busy) return false;
+    const found = this.findHint();
+    if (!found) return false;
+    this.hint = { ...found, until: performance.now() + 1900 };
+    return true;
+  }
+
+  clearHint() {
+    this.hint = null;
+  }
+
   // --- public interaction --------------------------------------------
 
   isAdjacent(a, b) {
@@ -150,6 +181,7 @@ export class Board {
   async trySwap(a, b) {
     if (this.busy) return false;
     if (!this.isAdjacent(a, b)) return false;
+    this.hint = null;
     this.busy = true;
     const now = performance.now();
     this._swapCells(a, b, now);
@@ -284,6 +316,7 @@ export class Board {
       const scoreGain = (removedSet.size - spawnKeys.size) * 10 * combo;
       if (scoreGain > 0) this.onScore(scoreGain, combo);
       this.onParticles(particlePts);
+      if (spawns.length > 0) this.onPower();
 
       await sleep(REMOVE_MS);
 

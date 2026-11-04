@@ -1,7 +1,8 @@
 import { PIECE_COLORS, UI } from './palette.js';
 
 // Seven board pieces, each a distinct silhouette so colorblind players can
-// still tell types apart. Shapes are drawn procedurally (no image assets).
+// still tell types apart. Shapes are drawn procedurally as glossy gems (no
+// image assets).
 export const PIECE_TYPES = [
   { id: 'amethyst', name: 'Amethyst Shard', color: PIECE_COLORS.lavender, shape: 'spike' },
   { id: 'moonstone', name: 'Moonstone', color: PIECE_COLORS.teal, shape: 'hex' },
@@ -23,85 +24,52 @@ function shade(hex, amt) {
   return `rgb(${r},${g},${b})`;
 }
 
-function polygon(ctx, pts) {
-  ctx.beginPath();
-  ctx.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-  ctx.closePath();
-}
+// --- path tracers: build a canvas path only, no fill/stroke -----------
 
-function outline(ctx, r) {
-  ctx.lineWidth = Math.max(2, r * 0.1);
-  ctx.strokeStyle = UI.charcoalViolet;
-  ctx.stroke();
-}
-
-function drawSpike(ctx, cx, cy, r, color) {
-  const pts = [
-    [cx, cy - r * 1.15],
-    [cx + r * 0.55, cy - r * 0.2],
-    [cx + r * 0.4, cy + r * 0.95],
-    [cx - r * 0.4, cy + r * 0.95],
-    [cx - r * 0.55, cy - r * 0.2],
-  ];
-  polygon(ctx, pts);
-  ctx.fillStyle = color;
-  ctx.fill();
-  outline(ctx, r);
-  // facet highlight
+function traceSpike(ctx, cx, cy, r) {
   ctx.beginPath();
   ctx.moveTo(cx, cy - r * 1.15);
-  ctx.lineTo(cx + r * 0.1, cy + r * 0.95);
+  ctx.lineTo(cx + r * 0.55, cy - r * 0.2);
+  ctx.lineTo(cx + r * 0.4, cy + r * 0.95);
   ctx.lineTo(cx - r * 0.4, cy + r * 0.95);
+  ctx.lineTo(cx - r * 0.55, cy - r * 0.2);
   ctx.closePath();
-  ctx.fillStyle = shade(color, -25);
-  ctx.globalAlpha = 0.35;
-  ctx.fill();
-  ctx.globalAlpha = 1;
 }
 
-function drawHex(ctx, cx, cy, r, color) {
-  const pts = [];
+function traceHex(ctx, cx, cy, r) {
+  ctx.beginPath();
   for (let i = 0; i < 6; i++) {
     const a = (Math.PI / 3) * i - Math.PI / 2;
-    pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]);
+    const x = cx + Math.cos(a) * r;
+    const y = cy + Math.sin(a) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
   }
-  polygon(ctx, pts);
-  ctx.fillStyle = color;
-  ctx.fill();
-  outline(ctx, r);
+  ctx.closePath();
 }
 
-function drawClover(ctx, cx, cy, r, color) {
+function traceClover(ctx, cx, cy, r) {
   const lobeR = r * 0.52;
   const offs = [
     [0, -r * 0.42],
     [r * 0.42, r * 0.2],
     [-r * 0.42, r * 0.2],
   ];
-  ctx.fillStyle = color;
-  offs.forEach(([dx, dy]) => {
-    ctx.beginPath();
-    ctx.arc(cx + dx, cy + dy, lobeR, 0, Math.PI * 2);
-    ctx.fill();
-  });
-  // stem
-  ctx.strokeStyle = color;
-  ctx.lineWidth = r * 0.22;
   ctx.beginPath();
-  ctx.moveTo(cx, cy + r * 0.3);
-  ctx.lineTo(cx, cy + r * 0.95);
-  ctx.stroke();
-  ctx.lineWidth = Math.max(2, r * 0.08);
-  ctx.strokeStyle = UI.charcoalViolet;
   offs.forEach(([dx, dy]) => {
-    ctx.beginPath();
+    ctx.moveTo(cx + dx + lobeR, cy + dy);
     ctx.arc(cx + dx, cy + dy, lobeR, 0, Math.PI * 2);
-    ctx.stroke();
   });
+  // stem, as a thin rounded rect merged into the path
+  const sw = r * 0.16;
+  ctx.moveTo(cx - sw, cy + r * 0.25);
+  ctx.lineTo(cx + sw, cy + r * 0.25);
+  ctx.lineTo(cx + sw, cy + r * 0.95);
+  ctx.lineTo(cx - sw, cy + r * 0.95);
+  ctx.closePath();
 }
 
-function drawStar(ctx, cx, cy, r, color) {
+function traceStar(ctx, cx, cy, r) {
   const spikes = 5;
   const outerR = r;
   const innerR = r * 0.46;
@@ -115,150 +83,180 @@ function drawStar(ctx, cx, cy, r, color) {
     else ctx.lineTo(x, y);
   }
   ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-  outline(ctx, r);
 }
 
-function drawFlower(ctx, cx, cy, r, color) {
+function traceFlower(ctx, cx, cy, r) {
   const petals = 6;
-  const petalR = r * 0.42;
-  ctx.fillStyle = color;
-  for (let i = 0; i < petals; i++) {
-    const a = (Math.PI * 2 * i) / petals;
-    const px = cx + Math.cos(a) * r * 0.5;
-    const py = cy + Math.sin(a) * r * 0.5;
-    ctx.beginPath();
-    ctx.arc(px, py, petalR, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.strokeStyle = UI.charcoalViolet;
-  ctx.lineWidth = Math.max(1.5, r * 0.06);
-  for (let i = 0; i < petals; i++) {
-    const a = (Math.PI * 2 * i) / petals;
-    const px = cx + Math.cos(a) * r * 0.5;
-    const py = cy + Math.sin(a) * r * 0.5;
-    ctx.beginPath();
-    ctx.arc(px, py, petalR, 0, Math.PI * 2);
-    ctx.stroke();
-  }
+  const petalR = r * 0.4;
   ctx.beginPath();
-  ctx.arc(cx, cy, r * 0.4, 0, Math.PI * 2);
-  ctx.fillStyle = shade(color, 30);
-  ctx.fill();
-  ctx.lineWidth = Math.max(2, r * 0.08);
-  ctx.strokeStyle = UI.charcoalViolet;
-  ctx.stroke();
+  for (let i = 0; i < petals; i++) {
+    const a = (Math.PI * 2 * i) / petals;
+    const px = cx + Math.cos(a) * r * 0.5;
+    const py = cy + Math.sin(a) * r * 0.5;
+    ctx.moveTo(px + petalR, py);
+    ctx.arc(px, py, petalR, 0, Math.PI * 2);
+  }
+  ctx.moveTo(cx + r * 0.42, cy);
+  ctx.arc(cx, cy, r * 0.42, 0, Math.PI * 2);
+  ctx.closePath();
 }
 
-function drawDroplet(ctx, cx, cy, r, color) {
+function traceDroplet(ctx, cx, cy, r) {
   ctx.beginPath();
   ctx.moveTo(cx, cy - r);
   ctx.bezierCurveTo(cx + r * 0.95, cy + r * 0.1, cx + r * 0.6, cy + r, cx, cy + r);
   ctx.bezierCurveTo(cx - r * 0.6, cy + r, cx - r * 0.95, cy + r * 0.1, cx, cy - r);
   ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-  outline(ctx, r);
 }
 
-function drawCrescent(ctx, cx, cy, r, color) {
-  ctx.save();
+function traceCrescent(ctx, cx, cy, r) {
   ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.fillStyle = color;
-  ctx.fill();
-  ctx.strokeStyle = UI.charcoalViolet;
-  ctx.lineWidth = Math.max(2, r * 0.1);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(cx + r * 0.42, cy - r * 0.12, r * 0.82, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.globalCompositeOperation = 'destination-out';
-  ctx.fill();
-  ctx.restore();
+  // outer disc, clockwise
+  ctx.arc(cx, cy, r, 0, Math.PI * 2, false);
+  // "bite" disc, opposite winding carves a hole under the nonzero fill rule
+  const bx = cx + r * 0.42;
+  const by = cy - r * 0.12;
+  const br = r * 0.82;
+  ctx.moveTo(bx + br, by);
+  ctx.arc(bx, by, br, 0, Math.PI * 2, true);
 }
 
-const SHAPE_DRAWERS = {
-  spike: drawSpike,
-  hex: drawHex,
-  clover: drawClover,
-  star: drawStar,
-  flower: drawFlower,
-  droplet: drawDroplet,
-  crescent: drawCrescent,
+const TRACERS = {
+  spike: traceSpike,
+  hex: traceHex,
+  clover: traceClover,
+  star: traceStar,
+  flower: traceFlower,
+  droplet: traceDroplet,
+  crescent: traceCrescent,
 };
 
-function drawFace(ctx, cx, cy, r) {
-  ctx.strokeStyle = UI.charcoalViolet;
-  ctx.lineWidth = Math.max(1.5, r * 0.09);
-  ctx.lineCap = 'round';
-  // closed happy eyes
-  [-1, 1].forEach((side) => {
-    ctx.beginPath();
-    ctx.arc(cx + side * r * 0.32, cy - r * 0.05, r * 0.16, Math.PI * 1.1, Math.PI * 1.9);
-    ctx.stroke();
-  });
-  // smile
-  ctx.beginPath();
-  ctx.arc(cx, cy + r * 0.15, r * 0.22, Math.PI * 0.15, Math.PI * 0.85);
+/**
+ * Render one piece as a glossy, beveled gem: drop shadow, diagonal gradient
+ * fill, dark facet outline, and a soft specular highlight clipped to the
+ * shape.
+ */
+function renderGem(ctx, trace, cx, cy, r, color) {
+  // drop shadow
+  ctx.save();
+  ctx.shadowColor = 'rgba(10,6,20,0.5)';
+  ctx.shadowBlur = r * 0.4;
+  ctx.shadowOffsetY = r * 0.16;
+  trace(ctx, cx, cy, r);
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+
+  // bevel gradient fill
+  const grad = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
+  grad.addColorStop(0, shade(color, 85));
+  grad.addColorStop(0.45, color);
+  grad.addColorStop(1, shade(color, -55));
+  trace(ctx, cx, cy, r);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // facet outline
+  trace(ctx, cx, cy, r);
+  ctx.lineWidth = Math.max(1.1, r * 0.055);
+  ctx.strokeStyle = shade(color, -90);
+  ctx.globalAlpha = 0.85;
   ctx.stroke();
-  // blush
-  ctx.fillStyle = 'rgba(255,255,255,0.0)';
-  ['rgba(0,0,0,0)'].forEach(() => {});
-  ctx.globalAlpha = 0.35;
-  ctx.fillStyle = '#ffffff';
-  [-1, 1].forEach((side) => {
-    ctx.beginPath();
-    ctx.ellipse(cx + side * r * 0.5, cy + r * 0.22, r * 0.1, r * 0.06, 0, 0, Math.PI * 2);
-    ctx.fill();
-  });
   ctx.globalAlpha = 1;
+
+  // specular highlight, clipped to the gem's own silhouette
+  ctx.save();
+  trace(ctx, cx, cy, r);
+  ctx.clip();
+
+  const sheen = ctx.createRadialGradient(
+    cx - r * 0.32, cy - r * 0.42, r * 0.04,
+    cx - r * 0.32, cy - r * 0.42, r * 1.05
+  );
+  sheen.addColorStop(0, 'rgba(255,255,255,0.8)');
+  sheen.addColorStop(0.35, 'rgba(255,255,255,0.22)');
+  sheen.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = sheen;
+  ctx.beginPath();
+  ctx.arc(cx - r * 0.3, cy - r * 0.42, r * 1.05, 0, Math.PI * 2);
+  ctx.fill();
+
+  // tight glint
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.beginPath();
+  ctx.ellipse(cx - r * 0.4, cy - r * 0.5, r * 0.16, r * 0.09, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // cool reflected light at the lower-right edge
+  const rim = ctx.createRadialGradient(
+    cx + r * 0.5, cy + r * 0.55, r * 0.05,
+    cx + r * 0.5, cy + r * 0.55, r * 0.8
+  );
+  rim.addColorStop(0, 'rgba(20,10,35,0.25)');
+  rim.addColorStop(1, 'rgba(20,10,35,0)');
+  ctx.fillStyle = rim;
+  ctx.beginPath();
+  ctx.arc(cx + r * 0.5, cy + r * 0.55, r * 0.8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
 }
 
 /**
  * Draw one board piece, optionally wearing a special-power overlay.
  * special: null | 'spark-row' | 'spark-col' | 'crystalball'
  */
-export function drawPiece(ctx, typeId, cx, cy, r, { special = null, face = true, glowT = 0 } = {}) {
+export function drawPiece(ctx, typeId, cx, cy, r, { special = null, glowT = 0 } = {}) {
   const type = BY_ID[typeId];
   if (!type) return;
-  const drawer = SHAPE_DRAWERS[type.shape] || drawHex;
+  const trace = TRACERS[type.shape] || traceHex;
 
   if (special) {
-    ctx.save();
     const pulse = 0.5 + 0.5 * Math.sin(glowT * 6);
+    ctx.save();
     ctx.shadowColor = UI.gold;
-    ctx.shadowBlur = r * (0.5 + pulse * 0.5);
-    drawer(ctx, cx, cy, r, type.color);
+    ctx.shadowBlur = r * (0.7 + pulse * 0.7);
+    renderGem(ctx, trace, cx, cy, r, type.color);
+    ctx.restore();
+
+    ctx.save();
+    ctx.strokeStyle = UI.gold;
+    ctx.globalAlpha = 0.85;
+    ctx.lineWidth = Math.max(1.5, r * 0.08);
+    ctx.setLineDash([r * 0.22, r * 0.16]);
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 1.22, glowT * 1.2, glowT * 1.2 + Math.PI * 1.7);
+    ctx.stroke();
     ctx.restore();
   } else {
-    drawer(ctx, cx, cy, r, type.color);
+    renderGem(ctx, trace, cx, cy, r, type.color);
   }
-
-  if (face) drawFace(ctx, cx, cy, r);
 
   if (special === 'spark-row' || special === 'spark-col') {
     ctx.save();
     ctx.strokeStyle = UI.gold;
     ctx.lineWidth = Math.max(2, r * 0.12);
+    ctx.lineCap = 'round';
+    ctx.shadowColor = UI.gold;
+    ctx.shadowBlur = r * 0.3;
     ctx.beginPath();
     if (special === 'spark-row') {
-      ctx.moveTo(cx - r * 1.15, cy);
-      ctx.lineTo(cx + r * 1.15, cy);
+      ctx.moveTo(cx - r * 0.95, cy);
+      ctx.lineTo(cx + r * 0.95, cy);
     } else {
-      ctx.moveTo(cx, cy - r * 1.15);
-      ctx.lineTo(cx, cy + r * 1.15);
+      ctx.moveTo(cx, cy - r * 0.95);
+      ctx.lineTo(cx, cy + r * 0.95);
     }
     ctx.stroke();
     ctx.restore();
   } else if (special === 'crystalball') {
     ctx.save();
     ctx.strokeStyle = UI.gold;
-    ctx.lineWidth = Math.max(2, r * 0.1);
+    ctx.lineWidth = Math.max(1.5, r * 0.07);
+    ctx.shadowColor = UI.gold;
+    ctx.shadowBlur = r * 0.3;
     ctx.beginPath();
-    ctx.arc(cx, cy, r * 1.15, 0, Math.PI * 2);
+    ctx.arc(cx, cy, r * 0.5, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
