@@ -1,4 +1,4 @@
-import { drawPiece, typeById } from './pieces.js';
+import { drawPiece, typeById } from './pieces.js?v=20261104c';
 import { UI } from './palette.js';
 import { clamp, easeOutCubic, easeOutBack, lerp, randInt } from './util.js';
 
