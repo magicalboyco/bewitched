@@ -16,7 +16,7 @@ All SVG files have intrinsic `width="256" height="256"` so they can be loaded in
 | `star` | `assets/gems/star.svg` | `#FFEA56` | Round |
 | `marigold` | `assets/gems/marigold.svg` | `#FFB750` | Cushion |
 | `potion` | `assets/gems/potion.svg` | `#FE797B` | Pear |
-| `crescent` | `assets/gems/crescent.svg` | `#8FA8FF` | Horizontal marquise |
+| `crescent` | `assets/gems/crescent.svg` | `#2F6BFF` | Horizontal marquise |
 
 ### Renderer handoff (Claude)
 
