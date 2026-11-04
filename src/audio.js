@@ -1,168 +1,135 @@
-// Small synthesized sound engine (Web Audio oscillators only — no audio
-// files). Everything here is generated on the fly, so there's nothing to
-// license or attribute.
-
-const STORAGE_KEY = 'bewitched-muted';
-
+// Original, low-volume whimsigoth score and puzzle sound design.
+// All notes are synthesized locally with Web Audio; no copyrighted recordings.
+const MUTE_KEY = 'bewitched-muted';
+const MUSIC_KEY = 'bewitched-music-enabled';
+const VOLUME_KEY = 'bewitched-music-volume';
 class AudioEngine {
-  constructor() {
-    this.ctx = null;
-    this.master = null;
-    this.ambient = null;
-    this.muted = false;
-    try {
-      this.muted = localStorage.getItem(STORAGE_KEY) === '1';
-    } catch {
-      /* private browsing / blocked storage: default to unmuted */
-    }
+  constructor(){
+    this.ctx=null;this.master=null;this.fxBus=null;this.musicBus=null;
+    this.ambient=null;
+    try{
+      this.muted=localStorage.getItem(MUTE_KEY)==='1';
+      this.musicEnabled=localStorage.getItem(MUSIC_KEY)!=='0';
+      this.musicVolume=Number(localStorage.getItem(VOLUME_KEY)??'0.44');
+      if(!Number.isFinite(this.musicVolume))this.musicVolume=.44;
+      this.musicVolume=Math.max(0,Math.min(1,this.musicVolume));
+    }catch{this.muted=false;this.musicEnabled=true;this.musicVolume=.44;}
   }
-
-  ensure() {
-    if (!this.ctx) {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      this.ctx = new Ctx();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = this.muted ? 0 : 0.9;
+  ensure(){
+    const Context=window.AudioContext||window.webkitAudioContext;
+    if(!Context)return;
+    if(!this.ctx){
+      this.ctx=new Context();this.master=this.ctx.createGain();
+      this.master.gain.value=this.muted?0:.8;
+      this.fxBus=this.ctx.createGain();this.fxBus.gain.value=.26;
+      this.musicBus=this.ctx.createGain();
+      this.musicBus.gain.value=this.musicEnabled?this.musicVolume*.22:0;
+      this.fxBus.connect(this.master);this.musicBus.connect(this.master);
       this.master.connect(this.ctx.destination);
     }
-    if (this.ctx.state === 'suspended') this.ctx.resume();
+    if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{});
   }
-
-  setMuted(muted) {
-    this.muted = muted;
-    if (this.master) {
-      this.master.gain.setTargetAtTime(muted ? 0 : 0.9, this.ctx.currentTime, 0.06);
-    }
-    try {
-      localStorage.setItem(STORAGE_KEY, muted ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
+  setMuted(value){
+    this.muted=!!value;
+    if(this.ctx)this.master.gain.setTargetAtTime(this.muted?0:.8,this.ctx.currentTime,.05);
+    try{localStorage.setItem(MUTE_KEY,this.muted?'1':'0');}catch{}
   }
-
-  toggleMuted() {
-    this.setMuted(!this.muted);
-    return this.muted;
+  toggleMuted(){this.setMuted(!this.muted);return this.muted;}
+  setMusicEnabled(value){
+    this.musicEnabled=!!value;
+    if(this.ctx)this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*.22:0,this.ctx.currentTime,.12);
+    try{localStorage.setItem(MUSIC_KEY,this.musicEnabled?'1':'0');}catch{}
   }
-
-  _tone(freq, { type = 'sine', dur = 0.12, gain = 0.2, attack = 0.005, decay = 0.14, delay = 0 } = {}) {
-    if (!this.ctx) return;
-    const t0 = this.ctx.currentTime + delay;
-    const osc = this.ctx.createOscillator();
-    osc.type = type;
-    osc.frequency.value = freq;
-    const g = this.ctx.createGain();
-    g.gain.setValueAtTime(0.0001, t0);
-    g.gain.linearRampToValueAtTime(gain, t0 + attack);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + attack + decay + dur);
-    osc.connect(g);
-    g.connect(this.master);
-    osc.start(t0);
-    osc.stop(t0 + attack + decay + dur + 0.05);
+  toggleMusic(){this.setMusicEnabled(!this.musicEnabled);return this.musicEnabled;}
+  setMusicVolume(value){
+    const n=Number(value);
+    this.musicVolume=Math.max(0,Math.min(1,Number.isFinite(n)?n:.44));
+    if(this.ctx)this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*.22:0,this.ctx.currentTime,.08);
+    try{localStorage.setItem(VOLUME_KEY,String(this.musicVolume));}catch{}
   }
-
-  playSwap() {
+  _note(freq,{start=0,length=.3,gain=.1,kind='sine',bus='fx',attack=.02}={}){
+    if(!this.ctx)return;
+    const when=this.ctx.currentTime+Math.max(0,start);
+    const o=this.ctx.createOscillator(),env=this.ctx.createGain();
+    const filter=this.ctx.createBiquadFilter();
+    filter.type='lowpass';filter.frequency.value=kind==='triangle'?1500:2300;
+    o.type=kind;o.frequency.value=freq;
+    env.gain.setValueAtTime(.0001,when);
+    env.gain.linearRampToValueAtTime(gain,when+Math.min(attack,length*.33));
+    env.gain.exponentialRampToValueAtTime(.0001,when+length);
+    o.connect(filter);filter.connect(env);
+    env.connect(bus==='music'?this.musicBus:this.fxBus);
+    o.start(when);o.stop(when+length+.035);
+  }
+  playSwap(){this.ensure();this._note(520,{length:.11,gain:.095,kind:'triangle'});this._note(720,{start:.045,length:.15,gain:.085});}
+  playInvalid(){this.ensure();this._note(220,{length:.12,gain:.08,kind:'triangle'});}
+  playMatch(combo=1){
     this.ensure();
-    this._tone(520, { type: 'triangle', dur: 0.04, gain: 0.14, decay: 0.07 });
-    this._tone(700, { type: 'triangle', dur: 0.04, gain: 0.1, decay: 0.08, delay: 0.03 });
+    const base=523.25*Math.pow(2,Math.min(4,combo-1)/12);
+    [1,1.25,1.5].forEach((ratio,i)=>this._note(base*ratio,{start:i*.067,length:.26,gain:.09,kind:i?'sine':'triangle'}));
   }
+  playPower(){this.ensure();[392,523.25,659.25,880].forEach((f,i)=>this._note(f,{start:i*.065,length:.38,gain:.12,kind:'triangle'}));}
+  playShuffle(){this.ensure();[523,440,392].forEach((f,i)=>this._note(f,{start:i*.065,length:.19,gain:.055}));}
+  playHint(){this.ensure();[784,988].forEach((f,i)=>this._note(f,{start:i*.13,length:.35,gain:.055}));}
+  playLevelUp(){this.ensure();[392,493.88,587.33,783.99].forEach((f,i)=>this._note(f,{start:i*.12,length:.48,gain:.11,kind:'triangle'}));}
+  playGameOver(){this.ensure();[440,392,329.63].forEach((f,i)=>this._note(f,{start:i*.2,length:.48,gain:.06}));}
 
-  playInvalid() {
-    this.ensure();
-    this._tone(170, { type: 'sawtooth', dur: 0.07, gain: 0.14, decay: 0.09 });
-    this._tone(120, { type: 'sawtooth', dur: 0.09, gain: 0.12, decay: 0.12, delay: 0.05 });
-  }
-
-  playMatch(combo = 1) {
-    this.ensure();
-    const base = 660 + Math.min(combo, 6) * 50;
-    [0, 1, 2].forEach((i) =>
-      this._tone(base * Math.pow(1.19, i), { type: 'sine', dur: 0.07, gain: 0.15, decay: 0.13, delay: i * 0.045 })
-    );
-  }
-
-  playPower() {
-    this.ensure();
-    [0, 1, 2, 3].forEach((i) =>
-      this._tone(420 * Math.pow(1.26, i), { type: 'square', dur: 0.045, gain: 0.07, decay: 0.09, delay: i * 0.03 })
-    );
-  }
-
-  playShuffle() {
-    this.ensure();
-    [0, 1, 2, 3, 4].forEach((i) =>
-      this._tone(500 - i * 60, { type: 'triangle', dur: 0.03, gain: 0.08, decay: 0.05, delay: i * 0.025 })
-    );
-  }
-
-  playHint() {
-    this.ensure();
-    this._tone(880, { type: 'sine', dur: 0.06, gain: 0.12, decay: 0.1 });
-    this._tone(1108, { type: 'sine', dur: 0.08, gain: 0.1, decay: 0.14, delay: 0.07 });
-  }
-
-  playLevelUp() {
-    this.ensure();
-    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) =>
-      this._tone(f, { type: 'triangle', dur: 0.09, gain: 0.16, decay: 0.15, delay: i * 0.07 })
-    );
-  }
-
-  playGameOver() {
-    this.ensure();
-    [587.33, 523.25, 440, 349.23].forEach((f, i) =>
-      this._tone(f, { type: 'sine', dur: 0.17, gain: 0.18, decay: 0.2, delay: i * 0.14 })
-    );
-  }
-
-  startAmbient() {
-    this.ensure();
-    if (this.ambient) return;
-    const notes = [220, 261.63, 329.63]; // A3, C4, E4 — soft A-minor drone
-    const bus = this.ctx.createGain();
-    bus.gain.value = 0.045;
-    bus.connect(this.master);
-
-    const oscs = notes.map((f, i) => {
-      const osc = this.ctx.createOscillator();
-      osc.type = 'sine';
-      osc.frequency.value = f;
-      const g = this.ctx.createGain();
-      g.gain.value = 0.7 / (i + 1);
-      osc.connect(g);
-      g.connect(bus);
-      osc.start();
-      return osc;
+  // A deliberate, slow 4-bar progression: Am(add9), Fmaj7, Cmaj7, G(add9).
+  // Repeating melody has phrasing and silence rather than random notes.
+  // One phrase is 16 seconds at ~60 BPM.
+  _schedulePhrase(phraseStart,barIndex){
+    const chords=[
+      [110,164.81,220,246.94],
+      [87.31,130.81,174.61,220],
+      [130.81,164.81,196,246.94],
+      [98,146.83,196,220]
+    ];
+    const melodies=[
+      [[0.5,659.25],[2.25,587.33]],
+      [[.75,523.25],[2.75,440]],
+      [[.25,493.88],[2.0,523.25],[3.0,587.33]],
+      [[.75,440],[2.5,392]]
+    ];
+    // Timed by AudioContext to avoid rhythmic drift.
+    const delay=phraseStart-this.ctx.currentTime;
+    chords[barIndex].forEach((f,i)=>{
+      this._note(f,{start:delay,length:3.8,gain:i===0?.028:.019,attack:1.1,kind:'sine',bus:'music'});
+      if(i>0)this._note(f*2,{start:delay+.06,length:3.3,gain:.009,attack:1.0,kind:'triangle',bus:'music'});
     });
-
-    const lfo = this.ctx.createOscillator();
-    lfo.frequency.value = 0.06;
-    const lfoGain = this.ctx.createGain();
-    lfoGain.gain.value = 0.025;
-    lfo.connect(lfoGain);
-    lfoGain.connect(bus.gain);
-    lfo.start();
-
-    const sparkle = setInterval(() => {
-      if (!this.ambient || this.muted) return;
-      if (Math.random() < 0.45) {
-        this._tone(1100 + Math.random() * 700, { type: 'sine', dur: 0.4, gain: 0.02, decay: 0.6 });
-      }
-    }, 2600);
-
-    this.ambient = { bus, oscs, lfo, sparkle };
+    melodies[barIndex].forEach(([beat,f])=>{
+      this._note(f,{start:delay+beat,length:1.25,gain:.053,attack:.045,kind:'sine',bus:'music'});
+      this._note(f*2,{start:delay+beat+.02,length:.76,gain:.012,attack:.025,kind:'triangle',bus:'music'});
+    });
   }
-
-  stopAmbient() {
-    if (!this.ambient) return;
-    const { bus, oscs, lfo, sparkle } = this.ambient;
-    clearInterval(sparkle);
-    const now = this.ctx.currentTime;
-    bus.gain.setTargetAtTime(0, now, 0.15);
-    oscs.forEach((o) => o.stop(now + 0.6));
-    lfo.stop(now + 0.6);
-    this.ambient = null;
+  startAmbient(){
+    this.ensure();if(!this.ctx||this.ambient)return;
+    const phrase=16;
+    let next=this.ctx.currentTime+.08,bar=0;
+    const schedule=()=>{
+      if(!this.ctx||!this.ambient)return;
+      while(next<this.ctx.currentTime+4.5){
+        this._schedulePhrase(next,bar);
+        next+=4;bar=(bar+1)%4;
+      }
+    };
+    this.ambient={interval:null};
+    schedule();
+    this.ambient.interval=setInterval(schedule,500);
+  }
+  stopAmbient(){
+    if(!this.ambient)return;
+    clearInterval(this.ambient.interval);
+    this.ambient=null;
+    if(this.ctx){
+      const now=this.ctx.currentTime;
+      this.musicBus.gain.setTargetAtTime(0,now,.25);
+      // Restore for a subsequent start; nodes already scheduled will fade out.
+      setTimeout(()=>{
+        if(this.ctx&&!this.ambient){
+          this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*.22:0,this.ctx.currentTime,.2);
+        }
+      },3200);
+    }
   }
 }
-
-export const audio = new AudioEngine();
+export const audio=new AudioEngine();
