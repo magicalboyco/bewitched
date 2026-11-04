@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bewitched — Mia de los Muertos</title>
-<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css?v=20261104b">
 </head>
 <body>
   <div id="app">
 
     <section id="menu" class="overlay">
       <div class="menu-card">
-        <button id="menu-sound-btn" class="round-btn small corner" title="Sound">🔊</button>
+        <button id="menu-sound-btn" class="round-btn small corner" title="Toggle game sounds" aria-label="Toggle game sounds">🔊</button>
         <img id="mascot" class="mascot" src="assets/mia-de-los-muertos.webp" alt="Mia de los Muertos, the bruja">
         <div class="menu-copy">
           <p class="kicker">A Joy Haus Game</p>
@@ -50,9 +50,14 @@
 
         <div class="panel-buttons">
           <button id="hint-btn" class="round-btn" title="Hint">💡</button>
-          <button id="sound-btn" class="round-btn" title="Sound">🔊</button>
+          <button id="sound-btn" class="round-btn" title="Toggle game sounds" aria-label="Toggle game sounds">🔊</button>
+          <button id="music-btn" class="round-btn" title="Toggle calming music" aria-label="Toggle calming music">♫</button>
           <button id="menu-btn" class="round-btn" title="Back to menu">☰</button>
           <button id="end-btn" class="round-btn danger" title="Finish">⏹</button>
+        </div>
+        <div class="music-mixer panel-block">
+          <label for="music-volume">☾ Moonlight music <span id="music-volume-label">44%</span></label>
+          <input id="music-volume" type="range" min="0" max="100" value="44" aria-label="Music volume">
         </div>
       </aside>
 
@@ -76,6 +81,6 @@
     </section>
 
   </div>
-  <script type="module" src="src/main.js"></script>
+  <script type="module" src="src/main.js?v=20261104b"></script>
 </body>
 </html>
