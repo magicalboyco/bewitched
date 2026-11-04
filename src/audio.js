@@ -103,7 +103,7 @@ class AudioEngine {
   }
   startAmbient(){
     this.ensure();if(!this.ctx||this.ambient)return;
-    const phrase=16;
+    this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*.22:0,this.ctx.currentTime,.12);
     let next=this.ctx.currentTime+.08,bar=0;
     const schedule=()=>{
       if(!this.ctx||!this.ambient)return;
@@ -120,16 +120,7 @@ class AudioEngine {
     if(!this.ambient)return;
     clearInterval(this.ambient.interval);
     this.ambient=null;
-    if(this.ctx){
-      const now=this.ctx.currentTime;
-      this.musicBus.gain.setTargetAtTime(0,now,.25);
-      // Restore for a subsequent start; nodes already scheduled will fade out.
-      setTimeout(()=>{
-        if(this.ctx&&!this.ambient){
-          this.musicBus.gain.setTargetAtTime(this.musicEnabled?this.musicVolume*.22:0,this.ctx.currentTime,.2);
-        }
-      },3200);
-    }
+    if(this.ctx)this.musicBus.gain.setTargetAtTime(0,this.ctx.currentTime,.25);
   }
 }
 export const audio=new AudioEngine();
