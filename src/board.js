@@ -1,4 +1,4 @@
-import { PIECE_TYPES } from './pieces.js';
+import { PIECE_TYPES } from './pieces.js?v=20261104c';
 import { sleep, randInt } from './util.js';
 
 export const COLS = 8;
