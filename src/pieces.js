@@ -1,5 +1,6 @@
 import { PIECE_COLORS, UI } from './palette.js';
 import { settings } from './settings.js';
+import { getGemImage } from './gemImages.js';
 
 // Keep stable IDs because the match-three engine stores these in its board.
 export const PIECE_TYPES = [
@@ -207,9 +208,30 @@ function drawDirectionGlyph(ctx, special, cx, cy, r) {
   ctx.restore();
 }
 
+// If assets/gems/<id>.svg has loaded (see gemImages.js — provided by the
+// art/audio collaborator, integrated here once available), draw that
+// instead of the procedural jewel. Falls straight through to the
+// procedural gem otherwise, so this is a safe no-op until those assets
+// exist and are wired in via loadGemImages().
+function drawGem(ctx, type, cx, cy, r) {
+  const img = getGemImage(type.id);
+  if (!img) {
+    drawJewel(ctx, type, cx, cy, r);
+    return;
+  }
+  const size = r * 2.2;
+  ctx.save();
+  ctx.shadowColor = 'rgba(9,4,21,.5)';
+  ctx.shadowBlur = r * 0.3;
+  ctx.shadowOffsetY = r * 0.2;
+  ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
+  ctx.restore();
+}
+
 /**
- * No faces or stock art: seven original geometry-based polished gems.
- * Special pieces glow, pulse, and emit orbiting animated four-point stars.
+ * Seven gems, each either the procedural geometry-based cut below or,
+ * once supplied, external artwork (see drawGem). Special pieces glow,
+ * pulse, and emit orbiting animated stars regardless of which art is used.
  */
 export function drawPiece(ctx,typeId,cx,cy,r,{special=null,glowT=0}={}) {
   const type=BY_ID[typeId];if(!type)return;
@@ -218,11 +240,11 @@ export function drawPiece(ctx,typeId,cx,cy,r,{special=null,glowT=0}={}) {
     ctx.save();
     ctx.shadowColor=SPECIAL_HUES[special]||'#ffe3a0';
     ctx.shadowBlur=reduced?r*.5:r*(.6+.45*Math.sin(glowT*3)**2);
-    drawJewel(ctx,type,cx,cy,r);
+    drawGem(ctx,type,cx,cy,r);
     ctx.restore();
     drawSpecial(ctx,special,cx,cy,r,glowT);
     drawDirectionGlyph(ctx,special,cx,cy,r);
   }else {
-    drawJewel(ctx,type,cx,cy,r);
+    drawGem(ctx,type,cx,cy,r);
   }
 }

@@ -98,6 +98,10 @@ cascades for combo multipliers.
 - `src/highscores.js` — per-mode persistent top score.
 - `src/haptics.js` — thin Vibration API wrapper, a no-op when the setting
   is off or the device/browser doesn't support it.
+- `src/gemImages.js` — optional externally-supplied gem art: if
+  `assets/gems/<id>.svg` exists and loads, `pieces.js` draws it instead of
+  the procedural gem; otherwise it falls straight through, so this is a
+  no-op until those files exist.
 - `src/game.js` — `GameSession`: mode config, scoring, leveling, the timed
   countdown, manual + idle auto-hint, restart, audio hookup, and win/end
   state (including reporting high scores).

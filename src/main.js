@@ -2,6 +2,12 @@ import { GameSession, MODES } from './game.js';
 import { audio } from './audio.js';
 import { settings, setReducedMotion, setAutoHint, setHaptics } from './settings.js';
 import { getTopScore } from './highscores.js';
+import { PIECE_TYPES } from './pieces.js';
+import { loadGemImages } from './gemImages.js';
+
+// Picks up assets/gems/<id>.svg if/when the art collaborator's branch
+// supplies them; a safe no-op today since those files don't exist yet.
+loadGemImages(PIECE_TYPES.map((p) => p.id));
 
 const BUILD_VERSION = 'v0.2.0-dev · gameplay-ux';
 
