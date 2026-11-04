@@ -2,6 +2,7 @@
 const KEYS = {
   reducedMotion: 'bewitched-reduced-motion',
   autoHint: 'bewitched-auto-hint',
+  haptics: 'bewitched-haptics',
 };
 
 function readBool(key, fallback) {
@@ -24,6 +25,7 @@ function writeBool(key, value) {
 export const settings = {
   reducedMotion: readBool(KEYS.reducedMotion, false),
   autoHint: readBool(KEYS.autoHint, true),
+  haptics: readBool(KEYS.haptics, true),
 };
 
 export function setReducedMotion(value) {
@@ -34,4 +36,9 @@ export function setReducedMotion(value) {
 export function setAutoHint(value) {
   settings.autoHint = !!value;
   writeBool(KEYS.autoHint, settings.autoHint);
+}
+
+export function setHaptics(value) {
+  settings.haptics = !!value;
+  writeBool(KEYS.haptics, settings.haptics);
 }

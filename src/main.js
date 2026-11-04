@@ -1,6 +1,6 @@
 import { GameSession, MODES } from './game.js';
 import { audio } from './audio.js';
-import { settings, setReducedMotion, setAutoHint } from './settings.js';
+import { settings, setReducedMotion, setAutoHint, setHaptics } from './settings.js';
 import { getTopScore } from './highscores.js';
 
 const BUILD_VERSION = 'v0.2.0-dev · gameplay-ux';
@@ -28,6 +28,7 @@ const musicVolumeLabel = document.getElementById('music-volume-label');
 const menuSoundBtn = document.getElementById('menu-sound-btn');
 const reducedMotionToggle = document.getElementById('reduced-motion-toggle');
 const autoHintToggle = document.getElementById('auto-hint-toggle');
+const hapticsToggle = document.getElementById('haptics-toggle');
 const buildTag = document.getElementById('build-tag');
 
 let session = null;
@@ -155,6 +156,10 @@ autoHintToggle.addEventListener('change', () => {
   setAutoHint(autoHintToggle.checked);
 });
 
+hapticsToggle.addEventListener('change', () => {
+  setHaptics(hapticsToggle.checked);
+});
+
 document.getElementById('menu-btn').addEventListener('click', () => {
   session?.end();
   play.classList.add('hidden');
@@ -177,6 +182,7 @@ document.getElementById('back-to-menu-btn').addEventListener('click', () => {
 
 reducedMotionToggle.checked = settings.reducedMotion;
 autoHintToggle.checked = settings.autoHint;
+hapticsToggle.checked = settings.haptics;
 buildTag.textContent = BUILD_VERSION;
 updateSoundIcons();
 updateMusicControls();

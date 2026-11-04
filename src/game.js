@@ -4,6 +4,7 @@ import { attachInput } from './input.js';
 import { audio } from './audio.js';
 import { settings } from './settings.js';
 import { reportScore } from './highscores.js';
+import { haptics } from './haptics.js';
 
 export const MODES = {
   classic: {
@@ -52,13 +53,21 @@ export class GameSession {
       onParticles: (pts) => this.renderer.addParticles(pts),
       onCombo: (info) => {
         this.renderer.handleCombo(info);
-        if (info.comboKind && info.comboKind !== 'solo-activation') audio.playComboSwap();
+        if (info.comboKind && info.comboKind !== 'solo-activation') {
+          audio.playComboSwap();
+          haptics.comboSwap();
+        } else {
+          haptics.match();
+        }
       },
       onShuffle: () => {
         audio.playShuffle();
         this.hooks.onShuffle?.();
       },
-      onPower: () => audio.playPower(),
+      onPower: () => {
+        audio.playPower();
+        haptics.power();
+      },
       onNoMoves: () => {
         if (this.mode.key === 'classic') {
           this.end();
@@ -75,6 +84,7 @@ export class GameSession {
       },
       onInvalidSwap: () => {
         audio.playInvalid();
+        haptics.invalid();
         this.hooks.onInvalidSwap?.();
       },
     });

@@ -55,6 +55,10 @@ cascades for combo multipliers.
   control the ambient music independently. Both choices persist.
 - "Reduce motion & flashing effects" in the menu dampens pulsing glows,
   cuts particle counts, and turns off the screen flash on big combos.
+- "Vibrate on matches (mobile)" gives a short haptic buzz on matches, a
+  stronger one for power-ups, and the strongest for a special-swap combo.
+  It's a silent no-op on desktop browsers (no Vibration API), so it's fine
+  to leave on everywhere.
 - Each mode keeps its own persistent **Top** score, shown next to **Score**.
 
 ## Game modes
@@ -92,6 +96,8 @@ cascades for combo multipliers.
 - `src/settings.js` — persisted accessibility/assist prefs (reduced
   motion, auto-hint).
 - `src/highscores.js` — per-mode persistent top score.
+- `src/haptics.js` — thin Vibration API wrapper, a no-op when the setting
+  is off or the device/browser doesn't support it.
 - `src/game.js` — `GameSession`: mode config, scoring, leveling, the timed
   countdown, manual + idle auto-hint, restart, audio hookup, and win/end
   state (including reporting high scores).
