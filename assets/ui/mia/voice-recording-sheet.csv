@@ -1,0 +1,42 @@
+event,id,locale,text,intention
+game_start,start1,en-US,Ready to make a little magic?,smile
+game_start,start2,en-US,"Ooh, let's see what you can do!",smile
+game_start,start3,en-US,"Let's go, apprentice!",smile
+match_3,m3a,en-US,Great job!,smile
+match_3,m3b,en-US,"Ooh, nice one!",smile
+match_3,m3c,en-US,You've got this!,smile
+match_3,m3d,en-US,"Hehe, I like that!",smile
+match_4,m4a,en-US,Let's go!,wink
+match_4,m4b,en-US,Now we're cooking!,wink
+match_4,m4c,es-MX,¡Eso!,wink
+match_4,m4d,en-US,Look at that sparkle!,wink
+match_5,m5a,en-US,Wowie!,excited
+match_5,m5b,en-US,You're a natural!,excited
+match_5,m5c,en-US,"Okay, superstar!",excited
+special_created,sp1,en-US,"Ooh, a shiny new spell!",excited
+special_created,sp2,en-US,That's some sparkly magic!,excited
+special_created,sp3,en-US,I like your style!,excited
+cascade_big,ca1,en-US,¡Ándale! Look at you!,excited
+cascade_big,ca2,en-US,Oh my stars!,excited
+cascade_big,ca3,en-US,"Wowie, it's still going!",excited
+cascade_big,ca4,en-US,"More, more, more!",excited
+special_combo,sc1,en-US,Whoa! Double trouble!,excited
+special_combo,sc2,en-US,That's a whole lot of magic!,excited
+special_combo,sc3,es-MX,¡Qué magia!,excited
+hint_manual,hm1,en-US,I see it!,hint
+hint_manual,hm2,en-US,Check this out!,hint
+hint_manual,hm3,en-US,Over here!,hint
+hint_auto,ha1,en-US,Psst… I think I see something!,hint
+hint_auto,ha2,en-US,"Ooh, over here!",hint
+hint_auto,ha3,en-US,Want a teeny little hint?,hint
+invalid_swap,iv1,en-US,"Hehe, not quite!",wink
+invalid_swap,iv2,en-US,"Another sparkle, another try!",wink
+reshuffle,re1,en-US,No more moves? Time for a shuffle!,surprised
+reshuffle,re2,en-US,A little swirl should do it!,surprised
+new_record,nr1,en-US,A new top score! Wowie!,excited
+new_record,nr2,en-US,You're in my Book of Shadows now!,excited
+level_up,lu1,en-US,Up a level! Let's go!,excited
+level_up,lu2,en-US,Your magic is growing!,excited
+game_end,ge1,en-US,"You did it, apprentice!",smile
+game_end,ge2,en-US,That was spellbinding!,smile
+game_end,ge3,en-US,Want to try another round?,smile

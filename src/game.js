@@ -1,7 +1,10 @@
 import { Board } from './board.js';
-import { BoardRenderer } from './render.js?v=20261104c';
+import { BoardRenderer } from './render.js';
 import { attachInput } from './input.js';
-import { audio } from './audio.js?v=20261104c';
+import { audio } from './audio.js';
+import { settings } from './settings.js';
+import { reportScore } from './highscores.js';
+import { haptics } from './haptics.js';
 
 export const MODES = {
   classic: {
@@ -37,26 +40,35 @@ export const MODES = {
 };
 
 const LEVEL_UP_SCORE = 500;
+const AUTO_HINT_IDLE_MS = 8000;
 
 export class GameSession {
   constructor(canvas, modeKey, hooks = {}) {
     this.mode = MODES[modeKey];
-    this.score = 0;
-    this.combo = 0;
-    this.level = 1;
-    this.levelProgress = 0;
-    this.timeLeft = this.mode.timed ? this.mode.duration : 0;
-    this.ended = false;
     this.hooks = hooks;
+    this.ended = false;
 
     this.board = new Board({
       onScore: (delta, combo) => this._addScore(delta, combo),
       onParticles: (pts) => this.renderer.addParticles(pts),
+      onCombo: (info) => {
+        this.renderer.handleCombo(info);
+        this.hooks.onCombo?.(info);
+        if (info.comboKind && info.comboKind !== 'solo-activation') {
+          audio.playComboSwap();
+          haptics.comboSwap();
+        } else {
+          haptics.match();
+        }
+      },
       onShuffle: () => {
         audio.playShuffle();
         this.hooks.onShuffle?.();
       },
-      onPower: () => audio.playPower(),
+      onPower: () => {
+        audio.playPower();
+        haptics.power();
+      },
       onNoMoves: () => {
         if (this.mode.key === 'classic') {
           this.end();
@@ -67,29 +79,70 @@ export class GameSession {
     });
     this.renderer = new BoardRenderer(canvas, this.board);
     this.detachInput = attachInput(canvas, this.board, this.renderer, {
-      onSwapAttempt: () => audio.playSwap(),
+      onSwapAttempt: () => {
+        audio.playSwap();
+        this._touch();
+      },
       onInvalidSwap: () => {
         audio.playInvalid();
+        haptics.invalid();
         this.hooks.onInvalidSwap?.();
       },
     });
 
     this._raf = null;
     this._timerInterval = null;
+    this._autoHintInterval = null;
+    this._lastActivity = performance.now();
+
+    this._resetRunState();
 
     this._loop = this._loop.bind(this);
   }
 
+  _resetRunState() {
+    this.score = 0;
+    this.combo = 0;
+    this.level = 1;
+    this.levelProgress = 0;
+    this.timeLeft = this.mode.timed ? this.mode.duration : 0;
+  }
+
+  _touch() {
+    this._lastActivity = performance.now();
+  }
+
   hint() {
-    if (this.ended) return;
+    if (this.ended) return false;
     const found = this.board.showHint();
-    if (found) audio.playHint();
+    if (found) {
+      audio.playHint();
+      this._touch();
+      this.hooks.onHint?.('manual');
+    }
     return found;
+  }
+
+  /** Re-deals the board and resets score/level/timer without tearing down
+   *  the session (input, renderer, and ambient audio keep running). */
+  restart() {
+    if (this.ended) return;
+    this._resetRunState();
+    this.board.reset();
+    this.renderer.particles = [];
+    this.renderer.popups = [];
+    this.renderer.callout = null;
+    this.renderer.flash = null;
+    this._touch();
+    this.hooks.onScore?.(this.score, 0, 0);
+    this.hooks.onLevelUp?.(this.level);
+    this.hooks.onTick?.(this.timeLeft);
   }
 
   start() {
     audio.ensure();
     audio.startAmbient();
+    this._touch();
     this._loop();
     if (this.mode.timed) {
       this._timerInterval = setInterval(() => {
@@ -102,6 +155,17 @@ export class GameSession {
         }
       }, 1000);
     }
+    this._autoHintInterval = setInterval(() => {
+      if (this.ended || this.board.busy || !settings.autoHint) return;
+      if (performance.now() - this._lastActivity >= AUTO_HINT_IDLE_MS) {
+        const found = this.board.showHint();
+        if (found) {
+          audio.playHint();
+          this._touch();
+          this.hooks.onHint?.('auto');
+        }
+      }
+    }, 1000);
   }
 
   _addScore(delta, combo) {
@@ -128,10 +192,12 @@ export class GameSession {
     if (this.ended) return;
     this.ended = true;
     if (this._timerInterval) clearInterval(this._timerInterval);
+    if (this._autoHintInterval) clearInterval(this._autoHintInterval);
     if (this._raf) cancelAnimationFrame(this._raf);
     this.detachInput();
     audio.playGameOver();
     audio.stopAmbient();
-    this.hooks.onEnd?.(this.score);
+    const isNewTop = reportScore(this.mode.key, this.score);
+    this.hooks.onEnd?.(this.score, isNewTop);
   }
 }

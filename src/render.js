@@ -1,8 +1,30 @@
-import { drawPiece, typeById } from './pieces.js?v=20261104c';
+import { drawPiece, typeById } from './pieces.js';
 import { UI } from './palette.js';
 import { clamp, easeOutCubic, easeOutBack, lerp, randInt } from './util.js';
+import { settings } from './settings.js';
 
 const SWAP_SHRINK = 220;
+const POPUP_LIFE = 900;
+const CALLOUT_LIFE = 1100;
+const FLASH_LIFE = 260;
+
+const COMBO_CALLOUTS = {
+  3: 'Nice!',
+  4: 'Great!',
+  5: 'Spellbinding!',
+};
+const COMBO_CALLOUT_MAX = 'Cursed Combo!';
+
+const COMBO_KIND_CALLOUTS = {
+  'spark-spark': 'Double Spark!',
+  'spark-crystalball': 'Charm Unleashed!',
+  'crystalball-crystalball': 'Twin Crystal Balls!',
+};
+
+const SPAWN_KIND_CALLOUTS = {
+  comet: 'A Comet Falls!',
+  witchfire: 'Witchfire Kindled!',
+};
 
 export class BoardRenderer {
   constructor(canvas, board) {
@@ -10,6 +32,9 @@ export class BoardRenderer {
     this.ctx = canvas.getContext('2d');
     this.board = board;
     this.particles = [];
+    this.popups = [];
+    this.callout = null; // {text, born}
+    this.flash = null; // {born, color}
     this.cellSize = canvas.width / board.cols;
     this.stars = Array.from({ length: 28 }, () => ({
       x: Math.random() * canvas.width,
@@ -30,7 +55,7 @@ export class BoardRenderer {
       const cx = col * this.cellSize + this.cellSize / 2;
       const cy = row * this.cellSize + this.cellSize / 2;
       const color = typeById(type)?.color || UI.gold;
-      const count = randInt(5, 8);
+      const count = settings.reducedMotion ? randInt(2, 3) : randInt(5, 8);
       for (let i = 0; i < count; i++) {
         const a = Math.random() * Math.PI * 2;
         const speed = 60 + Math.random() * 90;
@@ -46,6 +71,42 @@ export class BoardRenderer {
         });
       }
     });
+  }
+
+  /** Called from game.js on every Board#onCombo event. */
+  handleCombo({ scoreGain, combo, points, hadPower, spawnKinds = [], comboKind }) {
+    if (!points.length) return;
+    const cx = points.reduce((s, p) => s + p.col, 0) / points.length;
+    const cy = points.reduce((s, p) => s + p.row, 0) / points.length;
+    const x = cx * this.cellSize + this.cellSize / 2;
+    const y = cy * this.cellSize + this.cellSize / 2;
+    this._addPopup(x, y, `+${scoreGain}`);
+
+    const comboKindText = comboKind && comboKind !== 'solo-activation' ? COMBO_KIND_CALLOUTS[comboKind] : null;
+    const rareSpawn = spawnKinds.find((k) => SPAWN_KIND_CALLOUTS[k]);
+    const spawnText = rareSpawn ? SPAWN_KIND_CALLOUTS[rareSpawn] : null;
+    const calloutText = comboKindText || spawnText || (combo >= 6 ? COMBO_CALLOUT_MAX : COMBO_CALLOUTS[combo]);
+    if (calloutText) this._setCallout(calloutText);
+
+    if (!settings.reducedMotion && (hadPower || comboKindText)) {
+      const bigFlash =
+        comboKind === 'spark-spark' ||
+        comboKind === 'spark-crystalball' ||
+        comboKind === 'crystalball-crystalball' ||
+        spawnText;
+      this.flash = {
+        born: performance.now(),
+        color: bigFlash ? 'rgba(185,164,255,0.45)' : 'rgba(255,226,150,0.35)',
+      };
+    }
+  }
+
+  _addPopup(x, y, text) {
+    this.popups.push({ x, y, text, born: performance.now() });
+  }
+
+  _setCallout(text) {
+    this.callout = { text, born: performance.now() };
   }
 
   _updateParticles(now, dt) {
@@ -71,7 +132,9 @@ export class BoardRenderer {
 
     // twinkling dust
     this.stars.forEach((s) => {
-      const tw = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now / 1000 * s.speed + s.phase));
+      const tw = settings.reducedMotion
+        ? 0.6
+        : 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(now / 1000 * s.speed + s.phase));
       ctx.save();
       ctx.globalAlpha = tw * 0.8;
       ctx.fillStyle = UI.lilac;
@@ -133,12 +196,12 @@ export class BoardRenderer {
     const { ctx, cellSize } = this;
     const cx = sel.col * cellSize + cellSize / 2;
     const cy = sel.row * cellSize + cellSize / 2;
-    const pulse = 0.5 + 0.5 * Math.sin(now / 160);
+    const pulse = settings.reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(now / 160);
     ctx.save();
     ctx.strokeStyle = UI.gold;
     ctx.lineWidth = 3;
     ctx.shadowColor = UI.gold;
-    ctx.shadowBlur = 10;
+    ctx.shadowBlur = settings.reducedMotion ? 4 : 10;
     ctx.globalAlpha = 0.6 + pulse * 0.4;
     ctx.beginPath();
     ctx.roundRect(cx - cellSize / 2 + 4, cy - cellSize / 2 + 4, cellSize - 8, cellSize - 8, 10);
@@ -156,7 +219,7 @@ export class BoardRenderer {
     const { ctx, cellSize } = this;
     const remain = hint.until - now;
     const fadeOut = remain < 300 ? remain / 300 : 1;
-    const pulse = 0.5 + 0.5 * Math.sin(now / 130);
+    const pulse = settings.reducedMotion ? 0.6 : 0.5 + 0.5 * Math.sin(now / 130);
 
     [hint.a, hint.b].forEach((cell) => {
       const cx = cell.col * cellSize + cellSize / 2;
@@ -172,6 +235,65 @@ export class BoardRenderer {
       ctx.stroke();
       ctx.restore();
     });
+  }
+
+  _drawPopups(now) {
+    const { ctx } = this;
+    this.popups = this.popups.filter((p) => now - p.born < POPUP_LIFE);
+    this.popups.forEach((p) => {
+      const t = (now - p.born) / POPUP_LIFE;
+      const rise = settings.reducedMotion ? 10 : 34;
+      ctx.save();
+      ctx.globalAlpha = clamp(1 - t * 1.1, 0, 1);
+      ctx.fillStyle = UI.gold;
+      ctx.font = `700 ${Math.round(this.cellSize * 0.26)}px system-ui, sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
+      ctx.shadowBlur = 4;
+      ctx.fillText(p.text, p.x, p.y - rise * easeOutCubic(t));
+      ctx.restore();
+    });
+  }
+
+  _drawCallout(now) {
+    if (!this.callout) return;
+    const t = (now - this.callout.born) / CALLOUT_LIFE;
+    if (t >= 1) {
+      this.callout = null;
+      return;
+    }
+    const { ctx, canvas } = this;
+    const pop = t < 0.2 ? easeOutBack(t / 0.2) : 1;
+    const alpha = t > 0.7 ? clamp(1 - (t - 0.7) / 0.3, 0, 1) : 1;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(canvas.width / 2, canvas.height * 0.28);
+    ctx.scale(pop, pop);
+    ctx.font = `800 ${Math.round(canvas.width * 0.07)}px Georgia, serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = UI.gold;
+    ctx.strokeStyle = UI.charcoalViolet;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = 'rgba(0,0,0,0.5)';
+    ctx.shadowBlur = 10;
+    ctx.strokeText(this.callout.text, 0, 0);
+    ctx.fillText(this.callout.text, 0, 0);
+    ctx.restore();
+  }
+
+  _drawFlash(now) {
+    if (!this.flash) return;
+    const t = (now - this.flash.born) / FLASH_LIFE;
+    if (t >= 1) {
+      this.flash = null;
+      return;
+    }
+    const { ctx, canvas } = this;
+    ctx.save();
+    ctx.globalAlpha = clamp(1 - t, 0, 1) * 0.8;
+    ctx.fillStyle = this.flash.color;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.restore();
   }
 
   _drawParticles() {
@@ -240,5 +362,8 @@ export class BoardRenderer {
     this._drawHint(now);
     this._drawSelection(now);
     this._drawParticles();
+    this._drawPopups(now);
+    this._drawCallout(now);
+    this._drawFlash(now);
   }
 }

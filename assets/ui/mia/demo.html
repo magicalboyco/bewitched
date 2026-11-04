@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#261735">
+<title>Bewitched · Mia's Animation Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=PT+Serif+Caption&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./mia-portrait.css">
+<style>
+:root {color-scheme:dark; font-family:'PT Serif Caption',Georgia,serif;background:#261735;color:#fff2d5}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 50% 4%,#62376e,#291733 62%)}
+main{max-width:990px;margin:auto;padding:28px 18px 48px}h1,h2{font-family:'Uncial Antiqua',cursive;margin:.2em 0}h1{font-size:clamp(1.8rem,4.8vw,2.9rem);text-align:center;color:#f4d18c}.kicker{text-align:center;letter-spacing:.2em;color:#dec3f3;text-transform:uppercase;font-size:.7rem}
+.grid{display:grid;grid-template-columns:minmax(235px,390px) minmax(265px,1fr);gap:32px;align-items:center;margin-top:20px}
+.stage{background:linear-gradient(160deg,#fdf8f2,#f1e7f8);border:6px solid #ac7fc1;border-radius:18px;box-shadow:0 12px 35px #150b20aa,inset 0 0 0 3px #e6c37c;padding:15px 10px 0;overflow:hidden}.stage .mia-portrait{--mia-size:320px}
+.bubble{min-height:76px;display:flex;align-items:center;justify-content:center;position:relative;padding:15px 16px;background:#fff6df;color:#361c42;border-radius:18px;border:3px solid #ddba78;text-align:center;font-size:clamp(1rem,2vw,1.3rem);box-shadow:0 5px 20px #160d1c55}
+.bubble::after{content:"";position:absolute;left:35%;bottom:-14px;border-width:14px 12px 0;border-style:solid;border-color:#ddba78 transparent transparent}
+.bubble[hidden]{display:none}.status{color:#d4b7e0;font-size:.8rem;min-height:25px;margin:14px 0}
+.controls{border:1px solid #7b5a82;background:#34213e;border-radius:15px;padding:15px}h2{font-size:1.2rem;color:#f7d18b}.buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}
+button,select{font:inherit;border-radius:10px;border:1px solid #c89ea0;background:#624270;color:#fff8e8;padding:11px 8px;cursor:pointer;min-height:43px}button:hover{background:#815195}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #f3d17f;outline-offset:3px}button:active{transform:scale(.98)}
+fieldset{border:1px solid #765b7d;margin:12px 0;border-radius:10px}fieldset label{display:inline-flex;align-items:center;gap:5px;margin:6px 13px 6px 0;font-size:.83rem}input{accent-color:#efc977}
+select{width:100%;max-width:100%;font-size:.82rem}p.note{line-height:1.5;font-size:.8rem;color:#ddc6e4}small{color:#dbc3eb}.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+@media(max-width:680px){.grid{grid-template-columns:1fr;gap:14px}.stage{max-width:330px;margin:auto}.controls{margin:auto;width:min(100%,440px)}}
+@media(prefers-reduced-motion: reduce){button:active{transform:none}}
+</style>
+</head>
+<body>
+<main>
+<p class="kicker">A Joy Haus Game · Creative Asset Preview</p>
+<h1>Mia's Magical Reactions</h1>
+<div class="grid">
+  <section aria-label="Mia animation preview">
+    <div class="stage">
+      <div class="mia-portrait" id="mia" data-state="idle" data-reduced-motion="false">
+        <img class="mia-portrait__body" src="../../mia-de-los-muertos.webp" alt="Mia de los Muertos, wearing a purple witch hat with marigolds and holding a star wand">
+        <img class="mia-portrait__expression" id="expression" src="./expressions/smile.svg" alt="" aria-hidden="true" hidden>
+        <div class="mia-portrait__sparkles" aria-hidden="true"><i class="mia-portrait__sparkle"></i><i class="mia-portrait__sparkle"></i><i class="mia-portrait__sparkle"></i></div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <p id="bubble" class="bubble" role="status" aria-live="polite">Ooh, let's make a little magic!</p>
+    <div id="status" class="status" aria-live="off">Preview only. Click a moment to see Mia react.</div>
+    <div class="controls">
+      <h2>Try a moment</h2>
+      <div class="buttons">
+        <button type="button" data-cue="game_start">Say hello</button>
+        <button type="button" data-cue="match_3">Great job!</button>
+        <button type="button" data-cue="match_4">Let's go!</button>
+        <button type="button" data-cue="match_5">Wowie!</button>
+        <button type="button" data-cue="cascade_big">¡Ándale!</button>
+        <button type="button" data-cue="special_combo">Combo magic!</button>
+        <button type="button" data-cue="hint_manual">I see it!</button>
+        <button type="button" data-cue="new_record">New record!</button>
+      </div>
+      <fieldset><legend>Preferences</legend>
+        <label><input type="checkbox" id="voice"> Hear Mia speak (optional)</label>
+        <label><input type="checkbox" id="reduce"> Reduce movement</label>
+      </fieldset>
+      <label for="voice-choose">Browser voice (varies by device)</label>
+      <select id="voice-choose"><option value="">Automatic voice</option></select>
+      <p class="note">This is a standalone prototype, not connected to gameplay. Speech uses device text-to-speech, which may sound different on different browsers. The original art is preserved, with small expression overlays and motion.</p>
+      <button type="button" id="idle">Return Mia to idle</button>
+    </div>
+  </section>
+</div>
+</main>
+<script type="module" src="./demo.js"></script>
+</body>
+</html>

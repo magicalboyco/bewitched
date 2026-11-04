@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "artistVersion": "mia-expressions-v0.1",
+  "portrait": {
+    "src": "../../mia-de-los-muertos.webp",
+    "width": 1221,
+    "height": 1289,
+    "format": "webp",
+    "alpha": false,
+    "notes": "Flattened illustration; white background; eyes closed at rest."
+  },
+  "expressionOverlay": {
+    "intrinsicViewBox": [
+      0,
+      0,
+      1221,
+      1289
+    ],
+    "transparent": true,
+    "relativePathPrefix": "expressions/",
+    "variants": [
+      "smile",
+      "talk-a",
+      "talk-o",
+      "excited",
+      "surprised",
+      "wink",
+      "hint"
+    ],
+    "mustShareImageGeometry": true
+  },
+  "motion": {
+    "restingCycleMs": 4800,
+    "celebrateMs": 560,
+    "hintMs": 700,
+    "talkFrameIntervalMs": 180,
+    "reduceMotionDisablesMovement": true
+  },
+  "caption": {
+    "anchor": "adjacent to Mia portrait, never over board",
+    "typicalMs": 3400,
+    "ariaLive": "polite"
+  },
+  "audio": {
+    "optIn": true,
+    "browserTTSOnly": "Prototype, not recorded voice",
+    "musicDuckDb": -4,
+    "separateSettingRequired": true
+  }
+}

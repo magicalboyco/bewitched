@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "character": "Mia de los Muertos",
+  "personality": "Playful, bubbly, encouraging, gently mischievous; occasional natural Mexican Spanish, never a caricature.",
+  "defaults": {
+    "bubbleMs": 3400,
+    "ambientGlobalCooldownMs": 24000,
+    "majorGlobalCooldownMs": 8500,
+    "manualHintBypassesCooldown": true,
+    "voiceOptIn": true,
+    "speechCaptionAlwaysVisible": true
+  },
+  "events": {
+    "game_start": {
+      "priority": 6, "chance": 1, "cooldownMs": 60000, "animation": "smile",
+      "lines": [
+        {"id": "start1", "text": "Ready to make a little magic?", "locale": "en-US"},
+        {"id": "start2", "text": "Ooh, let's see what you can do!", "locale": "en-US"},
+        {"id": "start3", "text": "Let's go, apprentice!", "locale": "en-US"}
+      ]
+    },
+    "match_3": {
+      "priority": 1, "chance": 0.12, "cooldownMs": 22000, "animation": "smile",
+      "lines": [
+        {"id": "m3a", "text": "Great job!", "locale": "en-US"},
+        {"id": "m3b", "text": "Ooh, nice one!", "locale": "en-US"},
+        {"id": "m3c", "text": "You've got this!", "locale": "en-US"},
+        {"id": "m3d", "text": "Hehe, I like that!", "locale": "en-US"}
+      ]
+    },
+    "match_4": {
+      "priority": 3, "chance": 0.45, "cooldownMs": 17000, "animation": "wink",
+      "lines": [
+        {"id": "m4a", "text": "Let's go!", "locale": "en-US"},
+        {"id": "m4b", "text": "Now we're cooking!", "locale": "en-US"},
+        {"id": "m4c", "text": "¡Eso!", "locale": "es-MX"},
+        {"id": "m4d", "text": "Look at that sparkle!", "locale": "en-US"}
+      ]
+    },
+    "match_5": {
+      "priority": 5, "chance": 0.85, "cooldownMs": 12000, "animation": "excited",
+      "lines": [
+        {"id": "m5a", "text": "Wowie!", "locale": "en-US"},
+        {"id": "m5b", "text": "You're a natural!", "locale": "en-US"},
+        {"id": "m5c", "text": "Okay, superstar!", "locale": "en-US"}
+      ]
+    },
+    "special_created": {
+      "priority": 4, "chance": 0.58, "cooldownMs": 14000, "animation": "excited",
+      "lines": [
+        {"id": "sp1", "text": "Ooh, a shiny new spell!", "locale": "en-US"},
+        {"id": "sp2", "text": "That's some sparkly magic!", "locale": "en-US"},
+        {"id": "sp3", "text": "I like your style!", "locale": "en-US"}
+      ]
+    },
+    "cascade_big": {
+      "priority": 5, "chance": 0.72, "cooldownMs": 13000, "animation": "excited",
+      "lines": [
+        {"id": "ca1", "text": "¡Ándale! Look at you!", "locale": "en-US"},
+        {"id": "ca2", "text": "Oh my stars!", "locale": "en-US"},
+        {"id": "ca3", "text": "Wowie, it's still going!", "locale": "en-US"},
+        {"id": "ca4", "text": "More, more, more!", "locale": "en-US"}
+      ]
+    },
+    "special_combo": {
+      "priority": 7, "chance": 1, "cooldownMs": 7000, "animation": "excited",
+      "lines": [
+        {"id": "sc1", "text": "Whoa! Double trouble!", "locale": "en-US"},
+        {"id": "sc2", "text": "That's a whole lot of magic!", "locale": "en-US"},
+        {"id": "sc3", "text": "¡Qué magia!", "locale": "es-MX"}
+      ]
+    },
+    "hint_manual": {
+      "priority": 9, "chance": 1, "cooldownMs": 0, "animation": "hint",
+      "lines": [
+        {"id": "hm1", "text": "I see it!", "locale": "en-US"},
+        {"id": "hm2", "text": "Check this out!", "locale": "en-US"},
+        {"id": "hm3", "text": "Over here!", "locale": "en-US"}
+      ]
+    },
+    "hint_auto": {
+      "priority": 2, "chance": 0.38, "cooldownMs": 45000, "animation": "hint",
+      "lines": [
+        {"id": "ha1", "text": "Psst… I think I see something!", "locale": "en-US"},
+        {"id": "ha2", "text": "Ooh, over here!", "locale": "en-US"},
+        {"id": "ha3", "text": "Want a teeny little hint?", "locale": "en-US"}
+      ]
+    },
+    "invalid_swap": {
+      "priority": 1, "chance": 0.06, "cooldownMs": 55000, "animation": "wink",
+      "lines": [
+        {"id": "iv1", "text": "Hehe, not quite!", "locale": "en-US"},
+        {"id": "iv2", "text": "Another sparkle, another try!", "locale": "en-US"}
+      ]
+    },
+    "reshuffle": {
+      "priority": 5, "chance": 1, "cooldownMs": 10000, "animation": "surprised",
+      "lines": [
+        {"id": "re1", "text": "No more moves? Time for a shuffle!", "locale": "en-US"},
+        {"id": "re2", "text": "A little swirl should do it!", "locale": "en-US"}
+      ]
+    },
+    "new_record": {
+      "priority": 9, "chance": 1, "cooldownMs": 0, "animation": "excited",
+      "lines": [
+        {"id": "nr1", "text": "A new top score! Wowie!", "locale": "en-US"},
+        {"id": "nr2", "text": "You're in my Book of Shadows now!", "locale": "en-US"}
+      ]
+    },
+    "level_up": {
+      "priority": 7, "chance": 1, "cooldownMs": 10000, "animation": "excited",
+      "lines": [
+        {"id": "lu1", "text": "Up a level! Let's go!", "locale": "en-US"},
+        {"id": "lu2", "text": "Your magic is growing!", "locale": "en-US"}
+      ]
+    },
+    "game_end": {
+      "priority": 8, "chance": 1, "cooldownMs": 0, "animation": "smile",
+      "lines": [
+        {"id": "ge1", "text": "You did it, apprentice!", "locale": "en-US"},
+        {"id": "ge2", "text": "That was spellbinding!", "locale": "en-US"},
+        {"id": "ge3", "text": "Want to try another round?", "locale": "en-US"}
+      ]
+    }
+  }
+}

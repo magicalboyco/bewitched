@@ -1,4 +1,6 @@
 import { PIECE_COLORS, UI } from './palette.js';
+import { settings } from './settings.js';
+import { getGemImage } from './gemImages.js';
 
 // Keep stable IDs because the match-three engine stores these in its board.
 export const PIECE_TYPES = [
@@ -99,13 +101,13 @@ function drawJewel(ctx,type,cx,cy,r) {
   ctx.lineJoin='round';ctx.stroke();
   ctx.restore();
 }
-function star(ctx,x,y,size,alpha=1) {
+function star(ctx,x,y,size,alpha=1,glow='#fff1b7',fill='#fff6d7') {
   ctx.save();
   ctx.globalAlpha=alpha;
   ctx.translate(x,y);
-  ctx.shadowColor='#fff1b7';
+  ctx.shadowColor=glow;
   ctx.shadowBlur=size*2.2;
-  ctx.fillStyle='#fff6d7';
+  ctx.fillStyle=fill;
   ctx.beginPath();
   ctx.moveTo(0,-size);
   ctx.quadraticCurveTo(size*.19,-size*.19,size,0);
@@ -115,16 +117,57 @@ function star(ctx,x,y,size,alpha=1) {
   ctx.fill();
   ctx.restore();
 }
+// A tapered luminous streak trailing a Comet, always pointing the same
+// general direction (gentle sway with t) so it reads as "in motion" even
+// when the gem itself is sitting still.
+function cometTail(ctx,cx,cy,r,t,hue) {
+  const angle=Math.PI*0.22+Math.sin(t*0.6)*0.05;
+  const len=r*1.9;
+  const tx=cx-Math.cos(angle)*len, ty=cy-Math.sin(angle)*len;
+  ctx.save();
+  const grad=ctx.createLinearGradient(cx,cy,tx,ty);
+  grad.addColorStop(0,hue+'cc');
+  grad.addColorStop(0.5,hue+'55');
+  grad.addColorStop(1,hue+'00');
+  ctx.strokeStyle=grad;
+  ctx.lineCap='round';
+  ctx.lineWidth=Math.max(1.5,r*0.32);
+  ctx.beginPath();
+  ctx.moveTo(cx,cy);
+  ctx.lineTo(tx,ty);
+  ctx.stroke();
+  ctx.restore();
+}
+// Each special kind gets its own halo color and orbiting-star count so
+// they read as distinct at a glance: gold Sparks, violet Crystal Balls,
+// ember Comets (the 6-in-a-row tier — row + column + color, all at once,
+// with an icy white-blue nucleus and a directional tail), coral-gold
+// Witchfire (the L/T-shape tier — a 3x3 burst, flame-swirl styling).
+const SPECIAL_HUES = {
+  'spark-row': '#ffe3a0',
+  'spark-col': '#ffe3a0',
+  crystalball: '#b9a4ff',
+  comet: '#ffb37a',
+  witchfire: '#ff9a56',
+};
+const SPECIAL_COUNTS = { crystalball: 6, comet: 8, witchfire: 5 };
+const ICY_CORE = { glow: '#bfeaff', fill: '#eafdff' };
+const COMET_TAIL_HUE = '#bfe3ff';
+const WITCHFIRE_EMBER = { glow: '#ffcf8a', fill: '#ffd9a0' };
+
 function drawSpecial(ctx,special,cx,cy,r,t) {
   const ball=special==='crystalball';
-  const phase=t*2.5;
-  const pulse=.5+.5*Math.sin(phase*2.6);
-  const hue=ball?'#b9a4ff':'#ffe3a0';
+  const comet=special==='comet';
+  const witchfire=special==='witchfire';
+  const reduced=settings.reducedMotion;
+  const phase=reduced?0:t*2.5;
+  const pulse=reduced?0.5:.5+.5*Math.sin(phase*2.6);
+  const hue=SPECIAL_HUES[special]||'#ffe3a0';
   // Halo sits outside the jewel, not a slash drawn across its artwork.
   ctx.save();
   const halo=ctx.createRadialGradient(cx,cy,r*.36,cx,cy,r*1.55);
-  halo.addColorStop(0,ball?'rgba(206,178,255,.20)':'rgba(255,226,150,.20)');
-  halo.addColorStop(.72,ball?'rgba(166,125,255,.15)':'rgba(255,218,115,.13)');
+  halo.addColorStop(0,hue+'33');
+  halo.addColorStop(.72,hue+'22');
   halo.addColorStop(1,'rgba(255,255,255,0)');
   ctx.fillStyle=halo;
   ctx.globalAlpha=.73+pulse*.27;
@@ -136,38 +179,108 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
   ctx.shadowBlur=r*(.38+pulse*.42);
   ctx.globalAlpha=.55+pulse*.4;
   ctx.beginPath();ctx.arc(cx,cy,r*1.12,phase,phase+Math.PI*1.35);ctx.stroke();
+  if(comet||witchfire){
+    // A second, counter-rotating ring for the two rarer tiers.
+    ctx.beginPath();ctx.arc(cx,cy,r*1.3,-phase*1.3,-phase*1.3+Math.PI*1.1);ctx.stroke();
+  }
 
-  const count=ball?6:4;
+  if(comet) cometTail(ctx,cx,cy,r,reduced?0:t,COMET_TAIL_HUE);
+
+  const count=SPECIAL_COUNTS[special]||4;
   for(let i=0;i<count;i++){
     const a=phase*(i%2===0?1:-.75)+i*2*Math.PI/count;
     const d=r*(1.12+.1*Math.sin(t*3+i));
-    const size=r*(ball?.12:.10)*(0.72+0.28*Math.sin(t*4+i*2)**2);
-    star(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,size,.62+.38*pulse);
+    const size=r*(SPECIAL_COUNTS[special]?.12:.10)*(0.72+0.28*Math.sin(t*4+i*2)**2);
+    const alpha=.62+.38*pulse;
+    if(witchfire && i%2===1){
+      // Alternate coral and ember-gold glints for a two-tone flame swirl.
+      star(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,size,alpha,WITCHFIRE_EMBER.glow,WITCHFIRE_EMBER.fill);
+    } else {
+      star(ctx,cx+Math.cos(a)*d,cy+Math.sin(a)*d,size,alpha);
+    }
   }
-  star(ctx,cx-r*.3,cy-r*.4,r*(ball?.24:.17),.45+.55*pulse);
+  if(!comet) star(ctx,cx-r*.3,cy-r*.4,r*(ball?.24:.17),.45+.55*pulse);
   if(ball){
     ctx.strokeStyle='#f7dfff';
     ctx.lineWidth=Math.max(1,r*.05);
     ctx.globalAlpha=.5+.4*pulse;
     ctx.beginPath();ctx.arc(cx,cy,r*.68,0,Math.PI*2);ctx.stroke();
     star(ctx,cx+r*.12,cy-r*.06,r*.24,.75+.25*pulse);
+  } else if(comet){
+    // Icy white-blue nucleus — the "biggest" special on the board, and
+    // identifiable by its cool core + tail even with motion reduced.
+    star(ctx,cx,cy,r*.32,.85+.15*pulse,ICY_CORE.glow,ICY_CORE.fill);
   }
   ctx.restore();
 }
+// Spark Charms share one halo art regardless of orientation, so a small
+// gold arrow glyph is layered on top to show which way they'll fire —
+// without it, row- and column-clearing charms are visually identical.
+function drawDirectionGlyph(ctx, special, cx, cy, r) {
+  if (special !== 'spark-row' && special !== 'spark-col') return;
+  const horizontal = special === 'spark-row';
+  ctx.save();
+  ctx.translate(cx, cy + r * 0.74);
+  if (!horizontal) ctx.rotate(Math.PI / 2);
+  ctx.strokeStyle = '#2b203a';
+  ctx.lineWidth = Math.max(1.4, r * 0.1);
+  ctx.lineCap = 'round';
+  ctx.globalAlpha = 0.85;
+  const w = r * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(-w, 0);
+  ctx.lineTo(w, 0);
+  ctx.moveTo(-w, 0);
+  ctx.lineTo(-w + r * 0.16, -r * 0.14);
+  ctx.moveTo(-w, 0);
+  ctx.lineTo(-w + r * 0.16, r * 0.14);
+  ctx.moveTo(w, 0);
+  ctx.lineTo(w - r * 0.16, -r * 0.14);
+  ctx.moveTo(w, 0);
+  ctx.lineTo(w - r * 0.16, r * 0.14);
+  ctx.stroke();
+  ctx.restore();
+}
+
+// If assets/gems/<id>.svg has loaded (see gemImages.js — provided by the
+// art/audio collaborator, integrated here once available), draw that
+// instead of the procedural jewel. Falls straight through to the
+// procedural gem otherwise, so this is a safe no-op until those assets
+// exist and are wired in via loadGemImages().
+function drawGem(ctx, type, cx, cy, r) {
+  const img = getGemImage(type.id);
+  if (!img) {
+    drawJewel(ctx, type, cx, cy, r);
+    return;
+  }
+  // r is already ~0.39 * cellSize (see render.js), so r*2.3 lands close to
+  // the manifest's suggested `cellSize * 0.90` starting point.
+  const size = r * 2.3;
+  ctx.save();
+  ctx.shadowColor = 'rgba(9,4,21,.5)';
+  ctx.shadowBlur = r * 0.3;
+  ctx.shadowOffsetY = r * 0.2;
+  ctx.drawImage(img, cx - size / 2, cy - size / 2, size, size);
+  ctx.restore();
+}
+
 /**
- * No faces or stock art: seven original geometry-based polished gems.
- * Special pieces glow, pulse, and emit orbiting animated four-point stars.
+ * Seven gems, each either the procedural geometry-based cut below or,
+ * once supplied, external artwork (see drawGem). Special pieces glow,
+ * pulse, and emit orbiting animated stars regardless of which art is used.
  */
 export function drawPiece(ctx,typeId,cx,cy,r,{special=null,glowT=0}={}) {
   const type=BY_ID[typeId];if(!type)return;
   if(special){
+    const reduced=settings.reducedMotion;
     ctx.save();
-    ctx.shadowColor=special==='crystalball'?'#b9a4ff':'#ffe3a0';
-    ctx.shadowBlur=r*(.6+.45*Math.sin(glowT*3)**2);
-    drawJewel(ctx,type,cx,cy,r);
+    ctx.shadowColor=SPECIAL_HUES[special]||'#ffe3a0';
+    ctx.shadowBlur=reduced?r*.5:r*(.6+.45*Math.sin(glowT*3)**2);
+    drawGem(ctx,type,cx,cy,r);
     ctx.restore();
     drawSpecial(ctx,special,cx,cy,r,glowT);
+    drawDirectionGlyph(ctx,special,cx,cy,r);
   }else {
-    drawJewel(ctx,type,cx,cy,r);
+    drawGem(ctx,type,cx,cy,r);
   }
 }
