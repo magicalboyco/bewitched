@@ -1,4 +1,4 @@
-# BEWITCHED — Art Direction v0.2
+# BEWITCHED — Art Direction v0.3
 
 ## North star
 
@@ -33,7 +33,8 @@ These internal IDs are preserved deliberately. They are **not** license to displ
 
 - **Spark Charm / four-match:** warm antique-gold halo. Soft 1.4-second breathing glow and 3–5 tiny moving four-point glints. Don't draw an ugly slash across the jewel.
 - **Crystal Ball / five-match:** lavender-sapphire blue halo, slow orbiting crescent/sigil particles, occasional bright gold starburst. Clearly different from Spark.
-- **Witchfire / L or T match:** coral–gold heart-shaped flame swirl, distinct from either effect above.
+- **Witchfire / L or T match:** coral–gold heart-shaped flame swirl, distinct from either effect above. Keep a readable hot-coral center with a gold perimeter even when shown on a coral gem; this is a spell effect, not a new piece color.
+- **Comet / six-match:** preserve Claude's ember-orange energy and eight orbiting points, but add a **cool white/ice-blue comet nucleus and a clearly directional luminous tail**. The icy nucleus/tail distinguishes Comet from ordinary amber-orange gems and the gold Spark Charm at 56 px. An eight-point orbit should be decorative rather than the only identifier; static tail + diamond nucleus remain in reduced-motion mode.
 - **Grand spell:** a gently expanding ring and a short shower of dust, not an intense white strobe.
 - In reduced-motion mode, render clear static outlines or small badges instead of pulsing/rotation. No flashing above 3 Hz.
 
@@ -52,7 +53,7 @@ These internal IDs are preserved deliberately. They are **not** license to displ
 
 ## Mia de los Muertos
 
-Use the actual approved illustrated portrait, not the previous simple temporary SVG. Mia is warm, wise, eccentric and reassuring. Depict her Mexican-American cultural context through authentic character details rather than generic skull or Día de los Muertos decoration everywhere.
+Use the actual approved illustrated portrait, not the previous simple temporary SVG. Mia is **playful, bubbly, enthusiastic and a little mischievous**, while still supportive and reassuring. Reactions should be earned and infrequent rather than constant; her original portrait, facial features and costume remain unchanged. Depict her Mexican-American cultural context through authentic character details rather than generic skull or Día de los Muertos decoration everywhere.
 
 ## Audio mood
 
