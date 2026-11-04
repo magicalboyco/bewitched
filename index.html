@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bewitched — Mia de los Muertos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+
+    <section id="menu" class="overlay">
+      <div class="menu-card">
+        <img id="mascot" class="mascot" src="assets/mia.svg" alt="Mia de los Muertos, the bruja">
+        <div class="menu-copy">
+          <p class="kicker">A Joy Haus Game</p>
+          <h1>BEWITCHED</h1>
+          <p class="tagline">
+            Mia de los Muertos, a powerful Mexican-American bruja and keeper of the
+            Book of Shadows, needs your help. Swap crystals, herbs and charms to
+            cast cascading matches and brew up the highest score in her grimoire.
+          </p>
+          <div id="mode-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <header id="hud" class="hidden">
+      <button id="menu-btn" class="pill ghost" title="Back to menu">☰</button>
+      <div class="pill" id="score-pill">Score <span id="score-val">0</span></div>
+      <div class="pill" id="level-pill">Level <span id="level-val">1</span></div>
+      <div class="pill" id="timer-pill">Time <span id="timer-val">—</span></div>
+      <button id="end-btn" class="pill ghost">Finish</button>
+    </header>
+
+    <canvas id="board-canvas" width="640" height="640"></canvas>
+
+    <section id="end-overlay" class="overlay hidden">
+      <div class="menu-card">
+        <img class="mascot small" src="assets/mia.svg" alt="Mia de los Muertos">
+        <div class="menu-copy">
+          <p class="kicker">Spell complete</p>
+          <h1 id="end-title">Well cast!</h1>
+          <p class="tagline">Final score</p>
+          <p class="final-score" id="final-score">0</p>
+          <button id="play-again-btn" class="pill solid">Play again</button>
+          <button id="back-to-menu-btn" class="pill ghost">Back to menu</button>
+        </div>
+      </div>
+    </section>
+
+  </div>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>
