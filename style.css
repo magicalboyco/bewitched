@@ -16,7 +16,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Georgia', 'Iowan Old Style', serif;
+  font-family: 'PT Serif Caption', 'Georgia', 'Iowan Old Style', serif;
   background:
     radial-gradient(circle at 20% 15%, rgba(200,162,77,0.12), transparent 45%),
     radial-gradient(circle at 80% 85%, rgba(180,140,199,0.15), transparent 50%),
@@ -73,8 +73,11 @@ body {
 }
 
 h1 {
-  font-size: 42px;
-  letter-spacing: 0.04em;
+  font-family: 'Uncial Antiqua', Georgia, serif;
+  font-size: 38px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
   color: var(--cream);
   text-shadow: 0 2px 0 var(--charcoal-violet);
 }
@@ -354,5 +357,51 @@ h1 {
 .music-mixer input { width: 100%; accent-color: #c8a24d; cursor: pointer; }
 #side-panel .music-mixer { width: 100%; }
 .panel-buttons { grid-template-columns: repeat(3, minmax(0,1fr)); }
-@media (max-width: 760px) { .music-mixer { flex: 1 1 100%; } .panel-buttons { grid-template-columns: repeat(5, minmax(0,1fr)); } .panel-buttons .round-btn { width: 100%; max-width: 56px; } }
+@media (max-width: 760px) { .music-mixer { flex: 1 1 100%; } .panel-buttons { grid-template-columns: repeat(6, minmax(0,1fr)); } .panel-buttons .round-btn { width: 100%; max-width: 56px; } }
+@media (max-width: 480px) { .panel-buttons { grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; } }
 @media (max-width: 420px) { .panel-buttons { gap: 5px; } .panel-buttons .round-btn { font-size: 17px; } }
+
+/* ---------- score + top readout ---------- */
+.led-row { display: flex; gap: 8px; }
+.led-row > div { flex: 1; }
+.led-display-small { font-size: 16px; padding: 10px 4px; }
+
+/* ---------- accessibility / assist settings ---------- */
+.settings-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  margin-top: 4px;
+  font-family: system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--lilac);
+  text-align: left;
+}
+.settings-row label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+.settings-row input { accent-color: var(--gold); cursor: pointer; }
+
+/* ---------- restart confirm state ---------- */
+.round-btn.confirm {
+  background: radial-gradient(circle at 32% 28%, #ffd27a, var(--gold) 55%, #9c7730 100%);
+  color: var(--charcoal-violet);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+/* ---------- new record badge ---------- */
+.new-record-badge {
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+/* ---------- build version tag ---------- */
+#build-tag {
+  text-align: center;
+  font-family: system-ui, sans-serif;
+  font-size: 10px;
+  color: rgba(215, 199, 242, 0.35);
+  margin-top: 10px;
+}

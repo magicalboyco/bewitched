@@ -4,7 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bewitched — Mia de los Muertos</title>
-<link rel="stylesheet" href="style.css?v=20261104b">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&family=PT+Serif+Caption&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="app">
@@ -22,6 +25,11 @@
             cast cascading matches and brew up the highest score in her grimoire.
           </p>
           <div id="mode-list"></div>
+
+          <div class="settings-row">
+            <label><input type="checkbox" id="reduced-motion-toggle"> Reduce motion &amp; flashing effects</label>
+            <label><input type="checkbox" id="auto-hint-toggle"> Suggest a move when I'm stuck</label>
+          </div>
         </div>
       </div>
     </section>
@@ -29,8 +37,16 @@
     <div id="play" class="hidden">
       <aside id="side-panel">
         <div class="panel-block scoreboard">
-          <div class="led-label">Score</div>
-          <div class="led-display" id="score-val">0</div>
+          <div class="led-row">
+            <div>
+              <div class="led-label">Score</div>
+              <div class="led-display" id="score-val">0</div>
+            </div>
+            <div>
+              <div class="led-label">Top</div>
+              <div class="led-display led-display-small" id="top-val">0</div>
+            </div>
+          </div>
         </div>
 
         <div class="panel-block portrait-frame">
@@ -50,6 +66,7 @@
 
         <div class="panel-buttons">
           <button id="hint-btn" class="round-btn" title="Hint">💡</button>
+          <button id="restart-btn" class="round-btn" title="Restart this run">🔄</button>
           <button id="sound-btn" class="round-btn" title="Toggle game sounds" aria-label="Toggle game sounds">🔊</button>
           <button id="music-btn" class="round-btn" title="Toggle calming music" aria-label="Toggle calming music">♫</button>
           <button id="menu-btn" class="round-btn" title="Back to menu">☰</button>
@@ -74,13 +91,16 @@
           <h1 id="end-title">Well cast!</h1>
           <p class="tagline">Final score</p>
           <p class="final-score" id="final-score">0</p>
+          <p class="new-record-badge hidden" id="new-record-badge">✨ New top score! ✨</p>
           <button id="play-again-btn" class="pill solid">Play again</button>
           <button id="back-to-menu-btn" class="pill ghost">Back to menu</button>
         </div>
       </div>
     </section>
 
+    <p id="build-tag"></p>
+
   </div>
-  <script type="module" src="src/main.js?v=20261104c"></script>
+  <script type="module" src="src/main.js"></script>
 </body>
 </html>

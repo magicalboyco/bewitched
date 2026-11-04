@@ -1,5 +1,9 @@
-import { GameSession, MODES } from './game.js?v=20261104c';
-import { audio } from './audio.js?v=20261104c';
+import { GameSession, MODES } from './game.js';
+import { audio } from './audio.js';
+import { settings, setReducedMotion, setAutoHint } from './settings.js';
+import { getTopScore } from './highscores.js';
+
+const BUILD_VERSION = 'v0.2.0-dev · gameplay-ux';
 
 const menu = document.getElementById('menu');
 const play = document.getElementById('play');
@@ -8,20 +12,27 @@ const endOverlay = document.getElementById('end-overlay');
 const modeList = document.getElementById('mode-list');
 
 const scoreVal = document.getElementById('score-val');
+const topVal = document.getElementById('top-val');
 const levelVal = document.getElementById('level-val');
 const timerBox = document.getElementById('timer-box');
 const timerVal = document.getElementById('timer-val');
 const finalScore = document.getElementById('final-score');
 const endTitle = document.getElementById('end-title');
+const newRecordBadge = document.getElementById('new-record-badge');
 const hintBtn = document.getElementById('hint-btn');
+const restartBtn = document.getElementById('restart-btn');
 const soundBtn = document.getElementById('sound-btn');
 const musicBtn = document.getElementById('music-btn');
 const musicVolume = document.getElementById('music-volume');
 const musicVolumeLabel = document.getElementById('music-volume-label');
 const menuSoundBtn = document.getElementById('menu-sound-btn');
+const reducedMotionToggle = document.getElementById('reduced-motion-toggle');
+const autoHintToggle = document.getElementById('auto-hint-toggle');
+const buildTag = document.getElementById('build-tag');
 
 let session = null;
 let lastModeKey = 'classic';
+let restartArmedTimeout = null;
 
 function renderModeCards() {
   modeList.innerHTML = '';
@@ -60,14 +71,24 @@ function updateSoundIcons() {
   menuSoundBtn.textContent = icon;
 }
 
+function disarmRestart() {
+  clearTimeout(restartArmedTimeout);
+  restartArmedTimeout = null;
+  restartBtn.classList.remove('confirm');
+  restartBtn.textContent = '🔄';
+  restartBtn.title = 'Restart this run';
+}
+
 function startGame(modeKey) {
   lastModeKey = modeKey;
   menu.classList.add('hidden');
   endOverlay.classList.add('hidden');
   play.classList.remove('hidden');
+  disarmRestart();
 
   scoreVal.textContent = '0';
   levelVal.textContent = '1';
+  topVal.textContent = String(getTopScore(modeKey));
   const mode = MODES[modeKey];
   timerBox.classList.toggle('hidden', !mode.timed);
   timerVal.textContent = mode.timed ? formatTime(mode.duration) : '—';
@@ -76,20 +97,34 @@ function startGame(modeKey) {
     onScore: (total) => { scoreVal.textContent = String(total); },
     onLevelUp: (level) => { levelVal.textContent = String(level); },
     onTick: (left) => { timerVal.textContent = formatTime(left); },
-    onEnd: (finalScoreVal) => showEnd(finalScoreVal),
+    onEnd: (finalScoreVal, isNewTop) => showEnd(finalScoreVal, isNewTop),
   });
   session.start();
 }
 
-function showEnd(score) {
+function showEnd(score, isNewTop) {
   play.classList.add('hidden');
   endOverlay.classList.remove('hidden');
   finalScore.textContent = String(score);
   endTitle.textContent = score >= 3000 ? 'Powerful brew!' : 'Well cast!';
+  newRecordBadge.classList.toggle('hidden', !isNewTop);
 }
 
 hintBtn.addEventListener('click', () => {
   session?.hint();
+});
+
+restartBtn.addEventListener('click', () => {
+  if (!session || session.ended) return;
+  if (restartArmedTimeout) {
+    disarmRestart();
+    session.restart();
+    return;
+  }
+  restartBtn.classList.add('confirm');
+  restartBtn.textContent = '✓?';
+  restartBtn.title = 'Click again to confirm restart';
+  restartArmedTimeout = setTimeout(disarmRestart, 3000);
 });
 
 soundBtn.addEventListener('click', () => {
@@ -112,6 +147,14 @@ menuSoundBtn.addEventListener('click', () => {
   updateSoundIcons();
 });
 
+reducedMotionToggle.addEventListener('change', () => {
+  setReducedMotion(reducedMotionToggle.checked);
+});
+
+autoHintToggle.addEventListener('change', () => {
+  setAutoHint(autoHintToggle.checked);
+});
+
 document.getElementById('menu-btn').addEventListener('click', () => {
   session?.end();
   play.classList.add('hidden');
@@ -132,6 +175,9 @@ document.getElementById('back-to-menu-btn').addEventListener('click', () => {
   menu.classList.remove('hidden');
 });
 
+reducedMotionToggle.checked = settings.reducedMotion;
+autoHintToggle.checked = settings.autoHint;
+buildTag.textContent = BUILD_VERSION;
 updateSoundIcons();
 updateMusicControls();
 renderModeCards();

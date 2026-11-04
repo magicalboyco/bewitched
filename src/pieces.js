@@ -1,4 +1,5 @@
 import { PIECE_COLORS, UI } from './palette.js';
+import { settings } from './settings.js';
 
 // Keep stable IDs because the match-three engine stores these in its board.
 export const PIECE_TYPES = [
@@ -117,8 +118,9 @@ function star(ctx,x,y,size,alpha=1) {
 }
 function drawSpecial(ctx,special,cx,cy,r,t) {
   const ball=special==='crystalball';
-  const phase=t*2.5;
-  const pulse=.5+.5*Math.sin(phase*2.6);
+  const reduced=settings.reducedMotion;
+  const phase=reduced?0:t*2.5;
+  const pulse=reduced?0.5:.5+.5*Math.sin(phase*2.6);
   const hue=ball?'#b9a4ff':'#ffe3a0';
   // Halo sits outside the jewel, not a slash drawn across its artwork.
   ctx.save();
@@ -154,6 +156,35 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
   }
   ctx.restore();
 }
+// Spark Charms share one halo art regardless of orientation, so a small
+// gold arrow glyph is layered on top to show which way they'll fire —
+// without it, row- and column-clearing charms are visually identical.
+function drawDirectionGlyph(ctx, special, cx, cy, r) {
+  if (special !== 'spark-row' && special !== 'spark-col') return;
+  const horizontal = special === 'spark-row';
+  ctx.save();
+  ctx.translate(cx, cy + r * 0.74);
+  if (!horizontal) ctx.rotate(Math.PI / 2);
+  ctx.strokeStyle = '#2b203a';
+  ctx.lineWidth = Math.max(1.4, r * 0.1);
+  ctx.lineCap = 'round';
+  ctx.globalAlpha = 0.85;
+  const w = r * 0.5;
+  ctx.beginPath();
+  ctx.moveTo(-w, 0);
+  ctx.lineTo(w, 0);
+  ctx.moveTo(-w, 0);
+  ctx.lineTo(-w + r * 0.16, -r * 0.14);
+  ctx.moveTo(-w, 0);
+  ctx.lineTo(-w + r * 0.16, r * 0.14);
+  ctx.moveTo(w, 0);
+  ctx.lineTo(w - r * 0.16, -r * 0.14);
+  ctx.moveTo(w, 0);
+  ctx.lineTo(w - r * 0.16, r * 0.14);
+  ctx.stroke();
+  ctx.restore();
+}
+
 /**
  * No faces or stock art: seven original geometry-based polished gems.
  * Special pieces glow, pulse, and emit orbiting animated four-point stars.
@@ -161,12 +192,14 @@ function drawSpecial(ctx,special,cx,cy,r,t) {
 export function drawPiece(ctx,typeId,cx,cy,r,{special=null,glowT=0}={}) {
   const type=BY_ID[typeId];if(!type)return;
   if(special){
+    const reduced=settings.reducedMotion;
     ctx.save();
     ctx.shadowColor=special==='crystalball'?'#b9a4ff':'#ffe3a0';
-    ctx.shadowBlur=r*(.6+.45*Math.sin(glowT*3)**2);
+    ctx.shadowBlur=reduced?r*.5:r*(.6+.45*Math.sin(glowT*3)**2);
     drawJewel(ctx,type,cx,cy,r);
     ctx.restore();
     drawSpecial(ctx,special,cx,cy,r,glowT);
+    drawDirectionGlyph(ctx,special,cx,cy,r);
   }else {
     drawJewel(ctx,type,cx,cy,r);
   }

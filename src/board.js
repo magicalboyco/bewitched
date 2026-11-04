@@ -1,4 +1,4 @@
-import { PIECE_TYPES } from './pieces.js?v=20261104c';
+import { PIECE_TYPES } from './pieces.js';
 import { sleep, randInt } from './util.js';
 
 export const COLS = 8;
@@ -29,7 +29,7 @@ function makeCell(type, row, col) {
 }
 
 export class Board {
-  constructor({ onScore, onParticles, onShuffle, onNoMoves, onPower } = {}) {
+  constructor({ onScore, onParticles, onShuffle, onNoMoves, onPower, onCombo } = {}) {
     this.cols = COLS;
     this.rows = ROWS;
     this.grid = [];
@@ -41,6 +41,10 @@ export class Board {
     this.onShuffle = onShuffle || (() => {});
     this.onNoMoves = onNoMoves || (() => false);
     this.onPower = onPower || (() => {});
+    // Fired once per cascade step with everything a UI needs to place a
+    // floating score popup / combo callout: the score gained, the combo
+    // tier, and the board cells that were cleared this step.
+    this.onCombo = onCombo || (() => {});
     this.reset();
   }
 
@@ -317,6 +321,15 @@ export class Board {
       if (scoreGain > 0) this.onScore(scoreGain, combo);
       this.onParticles(particlePts);
       if (spawns.length > 0) this.onPower();
+      if (scoreGain > 0) {
+        this.onCombo({
+          scoreGain,
+          combo,
+          cellCount: removedSet.size,
+          points: particlePts,
+          hadPower: spawns.length > 0,
+        });
+      }
 
       await sleep(REMOVE_MS);
 
