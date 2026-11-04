@@ -1,0 +1,200 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --deep-purple: #6D3D8E;
+  --plum: #4F2C63;
+  --navy: #1E274A;
+  --cream: #F6F0E7;
+  --gold: #C8A24D;
+  --mauve: #B48CC7;
+  --lilac: #D7C7F2;
+  --charcoal-violet: #2B203A;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Georgia', 'Iowan Old Style', serif;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(200,162,77,0.12), transparent 45%),
+    radial-gradient(circle at 80% 85%, rgba(180,140,199,0.15), transparent 50%),
+    linear-gradient(160deg, var(--navy), var(--plum) 55%, var(--deep-purple));
+  color: var(--cream);
+}
+
+#app {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  padding: 16px;
+}
+
+.hidden { display: none !important; }
+
+/* ---------- shared overlay / menu card ---------- */
+
+.overlay {
+  position: relative;
+  width: 100%;
+}
+
+.menu-card {
+  background: rgba(30, 39, 74, 0.72);
+  border: 1px solid rgba(200, 162, 77, 0.35);
+  border-radius: 20px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+  backdrop-filter: blur(6px);
+}
+
+.mascot {
+  width: 150px;
+  filter: drop-shadow(0 10px 18px rgba(0,0,0,0.4));
+}
+.mascot.small { width: 100px; }
+
+.kicker {
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--gold);
+  font-family: system-ui, sans-serif;
+  font-weight: 600;
+}
+
+h1 {
+  font-size: 42px;
+  letter-spacing: 0.04em;
+  color: var(--cream);
+  text-shadow: 0 2px 0 var(--charcoal-violet);
+}
+
+.tagline {
+  max-width: 460px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--lilac);
+}
+
+/* ---------- mode cards ---------- */
+
+#mode-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-top: 6px;
+}
+
+.mode-card {
+  font-family: system-ui, sans-serif;
+  text-align: left;
+  border: 1px solid rgba(215, 199, 242, 0.25);
+  background: rgba(79, 44, 99, 0.6);
+  border-radius: 14px;
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--cream);
+  transition: transform 0.12s ease, border-color 0.12s ease, background 0.12s ease;
+}
+.mode-card:hover:not(.locked) {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  background: rgba(109, 61, 142, 0.75);
+}
+.mode-card .mode-title {
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--gold);
+}
+.mode-card .mode-subtitle {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--mauve);
+  margin: 2px 0 6px;
+}
+.mode-card .mode-blurb {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--lilac);
+}
+.mode-card.locked {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- HUD ---------- */
+
+#hud {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-family: system-ui, sans-serif;
+}
+
+.pill {
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(200, 162, 77, 0.4);
+  background: rgba(30, 39, 74, 0.75);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--cream);
+}
+.pill span { color: var(--gold); margin-left: 4px; }
+
+.pill.ghost {
+  background: transparent;
+  border-color: rgba(215, 199, 242, 0.35);
+  color: var(--lilac);
+  cursor: pointer;
+  font: inherit;
+}
+.pill.ghost:hover { border-color: var(--gold); color: var(--gold); }
+
+.pill.solid {
+  background: var(--gold);
+  color: var(--charcoal-violet);
+  cursor: pointer;
+  border: none;
+  font: inherit;
+  font-weight: 800;
+}
+.pill.solid:hover { filter: brightness(1.08); }
+
+/* ---------- board ---------- */
+
+#board-canvas {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  border: 1px solid rgba(200, 162, 77, 0.4);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45), inset 0 0 0 6px rgba(43, 32, 58, 0.25);
+  touch-action: none;
+}
+
+/* ---------- end screen ---------- */
+
+.final-score {
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--gold);
+}
+
+#end-overlay button { margin-top: 6px; width: 100%; }
+
+@media (max-width: 480px) {
+  h1 { font-size: 32px; }
+  #mode-list { grid-template-columns: 1fr; }
+}
