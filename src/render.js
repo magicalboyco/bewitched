@@ -15,10 +15,20 @@ const COMBO_CALLOUTS = {
 };
 const COMBO_CALLOUT_MAX = 'Cursed Combo!';
 
+// Keys are the two combined kinds, alphabetized and joined with '-'
+// (matches board.js's _resolveComboSwap naming) — covers every pairing
+// across all four specials, not just the original three.
 const COMBO_KIND_CALLOUTS = {
   'spark-spark': 'Double Spark!',
-  'spark-crystalball': 'Charm Unleashed!',
+  'crystalball-spark': 'Charm Unleashed!',
   'crystalball-crystalball': 'Twin Crystal Balls!',
+  'comet-comet': 'Twin Comets!',
+  'comet-crystalball': 'Cosmic Crystal!',
+  'comet-spark': 'Comet Storm!',
+  'comet-witchfire': 'Celestial Witchfire!',
+  'witchfire-witchfire': 'Double Witchfire!',
+  'spark-witchfire': 'Blazing Spark!',
+  'crystalball-witchfire': 'Enchanted Fire!',
 };
 
 const SPAWN_KIND_CALLOUTS = {
@@ -89,11 +99,7 @@ export class BoardRenderer {
     if (calloutText) this._setCallout(calloutText);
 
     if (!settings.reducedMotion && (hadPower || comboKindText)) {
-      const bigFlash =
-        comboKind === 'spark-spark' ||
-        comboKind === 'spark-crystalball' ||
-        comboKind === 'crystalball-crystalball' ||
-        spawnText;
+      const bigFlash = Boolean(comboKindText) || Boolean(spawnText);
       this.flash = {
         born: performance.now(),
         color: bigFlash ? 'rgba(185,164,255,0.45)' : 'rgba(255,226,150,0.35)',

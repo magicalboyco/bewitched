@@ -202,18 +202,20 @@ export class Board {
     this._swapCells(a, b, now);
     await sleep(SWAP_MS + 20);
 
+    // Any swap involving a special activates it, even if it also happens
+    // to create an ordinary three-match. Checking for matches first made
+    // two specials *sometimes* fail to detonate together, depending on
+    // surrounding colors. The ability is deterministic now.
+    const cellAtA = this.grid[a.row][a.col];
+    const cellAtB = this.grid[b.row][b.col];
+    if (cellAtA.special || cellAtB.special) {
+      await this._resolveComboSwap(cellAtA, cellAtB);
+      this.busy = false;
+      return true;
+    }
+
     const matches = this._findMatches(this.grid);
     if (matches.length === 0) {
-      // A swap that doesn't form a 3-match still activates if a special
-      // piece is involved — that's the only way to ever combine two
-      // specials (swapping them into each other never makes a run-of-3).
-      const cellAtA = this.grid[a.row][a.col];
-      const cellAtB = this.grid[b.row][b.col];
-      if (cellAtA.special || cellAtB.special) {
-        await this._resolveComboSwap(cellAtA, cellAtB);
-        this.busy = false;
-        return true;
-      }
       // swap back
       this._swapCells(a, b, performance.now());
       await sleep(SWAP_MS + 20);
@@ -373,8 +375,11 @@ export class Board {
     const kinds = [cellA.special, cellB.special].filter(Boolean);
     let comboKind = 'solo-activation';
     if (kinds.length === 2) {
-      const ballCount = kinds.filter((k) => k === 'crystalball').length;
-      comboKind = ballCount === 2 ? 'crystalball-crystalball' : ballCount === 1 ? 'spark-crystalball' : 'spark-spark';
+      // Covers all pairings, not just the original three (spark/crystal
+      // ball only) — Comet and Witchfire combos were falling through to
+      // a generic "spark" bucket before.
+      const family = (k) => (k.startsWith('spark-') ? 'spark' : k);
+      comboKind = kinds.map(family).sort().join('-');
     }
 
     const removedSet = new Map();

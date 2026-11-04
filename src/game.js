@@ -52,6 +52,7 @@ export class GameSession {
       onScore: (delta, combo) => this._addScore(delta, combo),
       onParticles: (pts) => this.renderer.addParticles(pts),
       onCombo: (info) => {
+        if (this.ended) return;
         this.renderer.handleCombo(info);
         this.hooks.onCombo?.(info);
         if (info.comboKind && info.comboKind !== 'solo-activation') {
@@ -62,10 +63,12 @@ export class GameSession {
         }
       },
       onShuffle: () => {
+        if (this.ended) return;
         audio.playShuffle();
         this.hooks.onShuffle?.();
       },
       onPower: () => {
+        if (this.ended) return;
         audio.playPower();
         haptics.power();
       },
@@ -126,7 +129,9 @@ export class GameSession {
   /** Re-deals the board and resets score/level/timer without tearing down
    *  the session (input, renderer, and ambient audio keep running). */
   restart() {
-    if (this.ended) return;
+    // Do not discard a live grid during asynchronous removal/cascade;
+    // a pending clear would otherwise mutate the newly reset board.
+    if (this.ended || this.board.busy) return false;
     this._resetRunState();
     this.board.reset();
     this.renderer.particles = [];
@@ -137,6 +142,7 @@ export class GameSession {
     this.hooks.onScore?.(this.score, 0, 0);
     this.hooks.onLevelUp?.(this.level);
     this.hooks.onTick?.(this.timeLeft);
+    return true;
   }
 
   start() {
@@ -169,6 +175,8 @@ export class GameSession {
   }
 
   _addScore(delta, combo) {
+    // Freeze scores once the player finishes or leaves a running cascade.
+    if (this.ended) return;
     this.score += delta;
     this.combo = combo;
     audio.playMatch(combo);
