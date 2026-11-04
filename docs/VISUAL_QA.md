@@ -13,7 +13,7 @@
 ## Special pieces (Claude's renderer)
 
 - [ ] Spark Charm glows gold and creates at least 3 orbiting star glints.
-- [ ] Crystal Ball glows violet/periwinkle and is visually distinct from Spark.
+- [ ] Crystal Ball glows violet/sapphire blue and is visually distinct from Spark.
 - [ ] Effects remain distinguishable with reduced motion enabled.
 - [ ] Combo activation has a clear beginning, effect and resolution.
 - [ ] No special VFX masks or obscures the gemstone color.
@@ -33,3 +33,10 @@
 ## Handoff
 
 QA checkboxes remain unchecked until actual browser/audio playtesting confirms them. Visual previews are **not** proof of integration.
+
+## Seven-gem recognition — sapphire update
+
+- [ ] At 40–64 CSS px, `crescent` reads unmistakably saturated sapphire blue (`#2F6BFF`), not lavender/periwinkle.
+- [ ] Sapphire crescent and lavender amethyst can be distinguished during cascades and low-attention peripheral glances.
+- [ ] Check all seven gems in normal, dimmed, and desaturated conditions; silhouette must provide an additional cue.
+- [ ] Runtime procedural palette in `src/palette.js` remains Claude-owned: Claude must update `PIECE_COLORS.periwinkle` (currently `#8FA8FF`) before live board adopts this color. Do not change IDs or gameplay logic.
