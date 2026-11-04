@@ -346,3 +346,13 @@ h1 {
   h1 { font-size: 32px; }
   #mode-list { grid-template-columns: 1fr; }
 }
+
+/* Independent, low-distraction whimsigoth music controls */
+.music-mixer { padding: 12px 13px; }
+.music-mixer label { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: #f6f0e7; font-family: 'PT Serif Caption', Georgia, serif; font-size: 12px; margin-bottom: 11px; }
+.music-mixer label span { color: #d7c7f2; font-variant-numeric: tabular-nums; }
+.music-mixer input { width: 100%; accent-color: #c8a24d; cursor: pointer; }
+#side-panel .music-mixer { width: 100%; }
+.panel-buttons { grid-template-columns: repeat(3, minmax(0,1fr)); }
+@media (max-width: 760px) { .music-mixer { flex: 1 1 100%; } .panel-buttons { grid-template-columns: repeat(5, minmax(0,1fr)); } .panel-buttons .round-btn { width: 100%; max-width: 56px; } }
+@media (max-width: 420px) { .panel-buttons { gap: 5px; } .panel-buttons .round-btn { font-size: 17px; } }
