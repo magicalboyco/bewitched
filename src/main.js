@@ -1,5 +1,5 @@
-import { GameSession, MODES } from './game.js';
-import { audio } from './audio.js';
+import { GameSession, MODES } from './game.js?v=20261104c';
+import { audio } from './audio.js?v=20261104c';
 
 const menu = document.getElementById('menu');
 const play = document.getElementById('play');
