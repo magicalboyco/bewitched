@@ -95,7 +95,7 @@ export class Board {
       for (let c = 1; c <= this.cols; c++) {
         const prev = grid[r][c - 1];
         const cur = c < this.cols ? grid[r][c] : null;
-        if (!cur || !prev || cur.type !== prev.type) {
+        if (!cur || !prev || cur.special === 'crystalball' || prev.special === 'crystalball' || cur.type !== prev.type) {
           const len = c - runStart;
           if (len >= 3) {
             const cells = [];
@@ -112,7 +112,7 @@ export class Board {
       for (let r = 1; r <= this.rows; r++) {
         const prev = grid[r - 1][c];
         const cur = r < this.rows ? grid[r][c] : null;
-        if (!cur || !prev || cur.type !== prev.type) {
+        if (!cur || !prev || cur.special === 'crystalball' || prev.special === 'crystalball' || cur.type !== prev.type) {
           const len = r - runStart;
           if (len >= 3) {
             const cells = [];
@@ -136,13 +136,13 @@ export class Board {
     return false;
   }
 
-  // A swap is playable if it forms a match OR activates a special piece —
-  // trySwap() honors both, so the "any moves left?" checks must agree,
-  // otherwise the board could reshuffle out from under a free special.
+  // Colored specials must match their own color. Only a Crystal Ball
+  // (Hypercube counterpart) allows a swap without making a 3-match.
+  // Hint checks and trySwap intentionally share this validity rule.
   _swapIsPlayable(grid, r1, c1, r2, c2) {
     const a = grid[r1][c1];
     const b = grid[r2][c2];
-    if (a.special || b.special) return true;
+    if (a.special === 'crystalball' || b.special === 'crystalball') return true;
     return this._swapCreatesMatch(grid, r1, c1, r2, c2);
   }
 
@@ -202,19 +202,18 @@ export class Board {
     this._swapCells(a, b, now);
     await sleep(SWAP_MS + 20);
 
+    // After the swap, the pieces have exchanged positions. The Crystal
+    // Ball is the sole wildcard; other specials require a real color run.
+    const cellAtA = this.grid[a.row][a.col];
+    const cellAtB = this.grid[b.row][b.col];
+    if (cellAtA.special === 'crystalball' || cellAtB.special === 'crystalball') {
+      await this._resolveComboSwap(cellAtA, cellAtB);
+      this.busy = false;
+      return true;
+    }
+
     const matches = this._findMatches(this.grid);
     if (matches.length === 0) {
-      // A swap that doesn't form a 3-match still activates if a special
-      // piece is involved — that's the only way to ever combine two
-      // specials (swapping them into each other never makes a run-of-3).
-      const cellAtA = this.grid[a.row][a.col];
-      const cellAtB = this.grid[b.row][b.col];
-      if (cellAtA.special || cellAtB.special) {
-        await this._resolveComboSwap(cellAtA, cellAtB);
-        this.busy = false;
-        return true;
-      }
-      // swap back
       this._swapCells(a, b, performance.now());
       await sleep(SWAP_MS + 20);
       this.busy = false;
@@ -246,25 +245,32 @@ export class Board {
   }
 
   /**
-   * Expands removedSet/queue to include everything each special piece in
-   * the queue clears (a row, a column, or every piece of its remembered
-   * color) — and recurses when that expansion catches further specials,
-   * so a spark that sweeps through a crystal ball chains into it too.
+   * Colored specials trigger only when removed by a valid color match or
+   * a chain reaction. A directly swapped Crystal Ball uses the *adjacent*
+   * gem's color and ignores its own remembered color.
    */
-  _expandSpecials(removedSet, queue) {
+  _expandSpecials(removedSet, queue, ignoredIds = new Set()) {
     const triggered = new Set();
     while (queue.length) {
       const pos = queue.pop();
       const cell = this.grid[pos.row][pos.col];
-      if (!cell || !cell.special || triggered.has(cell.id)) continue;
+      if (!cell || !cell.special || triggered.has(cell.id) || ignoredIds.has(cell.id)) continue;
       triggered.add(cell.id);
-      if (cell.special === 'spark-row' || cell.special === 'comet') {
+      if (cell.special === 'spark-row' || cell.special === 'spark-col') {
+        // Spark = Star Gem: entire row and column.
         this._addRow(removedSet, queue, cell.row);
-      }
-      if (cell.special === 'spark-col' || cell.special === 'comet') {
         this._addCol(removedSet, queue, cell.col);
       }
-      if (cell.special === 'crystalball' || cell.special === 'comet') {
+      if (cell.special === 'comet') {
+        // Comet = Supernova: three whole rows and three whole columns.
+        for (let d = -1; d <= 1; d++) {
+          if (cell.row + d >= 0 && cell.row + d < this.rows)
+            this._addRow(removedSet, queue, cell.row + d);
+          if (cell.col + d >= 0 && cell.col + d < this.cols)
+            this._addCol(removedSet, queue, cell.col + d);
+        }
+      }
+      if (cell.special === 'crystalball') {
         this._addColor(removedSet, queue, cell.type);
       }
       if (cell.special === 'witchfire') {
@@ -362,38 +368,39 @@ export class Board {
   }
 
   /**
-   * Swapping two special pieces into each other — or a special into a
-   * plain piece with no resulting match — detonates rather than reverts.
-   * Two specials together chain through _expandSpecials simultaneously:
-   * two Sparks clear their rows/columns together (a cross when one is a
-   * row and the other a column), a Spark + Crystal Ball clears a whole
-   * color AND sweeps a row/column, two Crystal Balls clear two colors.
+   * Crystal Ball / Hypercube swaps target the OTHER gem's color.
+   * Two Crystal Balls together clear the whole board. All colored
+   * specials must instead match three of their own gem color.
    */
   async _resolveComboSwap(cellA, cellB) {
-    const kinds = [cellA.special, cellB.special].filter(Boolean);
-    let comboKind = 'solo-activation';
-    if (kinds.length === 2) {
-      const ballCount = kinds.filter((k) => k === 'crystalball').length;
-      comboKind = ballCount === 2 ? 'crystalball-crystalball' : ballCount === 1 ? 'spark-crystalball' : 'spark-spark';
-    }
+    const ballA = cellA.special === 'crystalball';
+    const ballB = cellB.special === 'crystalball';
+    if (!ballA && !ballB) throw new Error('Only Crystal Balls allow wildcard swaps');
 
     const removedSet = new Map();
     const queue = [];
-    [cellA, cellB].forEach((cell) => {
-      if (cell.special) {
-        const pos = { row: cell.row, col: cell.col };
-        removedSet.set(key(pos.row, pos.col), pos);
-        queue.push(pos);
+    const ignoreBallIds = new Set();
+    let comboKind = 'solo-activation';
+
+    if (ballA && ballB) {
+      comboKind = 'crystalball-crystalball';
+      for (let r = 0; r < this.rows; r++) {
+        for (let c = 0; c < this.cols; c++) this._addCell(removedSet, queue, r, c);
       }
-    });
-    this._expandSpecials(removedSet, queue);
+      ignoreBallIds.add(cellA.id);
+      ignoreBallIds.add(cellB.id);
+    } else {
+      const ball = ballA ? cellA : cellB;
+      const target = ballA ? cellB : cellA;
+      ignoreBallIds.add(ball.id);
+      this._addCell(removedSet, queue, ball.row, ball.col);
+      this._addColor(removedSet, queue, target.type);
+      if (target.special) comboKind = 'spark-crystalball';
+    }
 
-    const combo = kinds.length === 2 ? 2 : 1;
-    await this._processRemoval(removedSet, [], combo, { comboKind });
-
-    // Falling pieces from a big combo clear can themselves form new
-    // matches — resolve those the normal way, including the end-of-turn
-    // no-valid-moves check.
+    // A power caught in the selected color still triggers normally.
+    this._expandSpecials(removedSet, queue, ignoreBallIds);
+    await this._processRemoval(removedSet, [], ballA && ballB ? 2 : 1, { comboKind });
     await this._resolveCascades({});
   }
 
@@ -408,12 +415,8 @@ export class Board {
       const spawns = []; // {row, col, special, type}
       groups.forEach((g) => g.cells.forEach((c) => removedSet.set(key(c.row, c.col), c)));
 
-      // An L/T shape — a row-run and a column-run of exactly 3 sharing a
-      // corner cell — is worth more than either run alone, so it becomes
-      // one Witchfire charm instead of two plain 3-clears. Only the plain
-      // 3+3 case is handled; a run of 4+ crossing another run still just
-      // resolves as its own independent spawn below (keeps the shape
-      // detection simple and unambiguous).
+      // T/L/+ intersection creates Spark Charm (Star Gem counterpart).
+      // Two crossing 3-runs are recognized; longer runs use their own tier.
       const consumed = new Set();
       for (let i = 0; i < groups.length; i++) {
         if (consumed.has(i) || groups[i].orientation !== 'row' || groups[i].cells.length !== 3) continue;
@@ -421,7 +424,7 @@ export class Board {
           if (consumed.has(j) || groups[j].orientation !== 'col' || groups[j].cells.length !== 3) continue;
           const corner = groups[i].cells.find((a) => groups[j].cells.some((b) => a.row === b.row && a.col === b.col));
           if (!corner) continue;
-          spawns.push({ row: corner.row, col: corner.col, special: 'witchfire', type: groups[i].type });
+          spawns.push({ row: corner.row, col: corner.col, special: 'spark-row', type: groups[i].type });
           consumed.add(i);
           consumed.add(j);
           break;
@@ -439,7 +442,7 @@ export class Board {
           spawns.push({
             row: mid.row,
             col: mid.col,
-            special: g.orientation === 'row' ? 'spark-row' : 'spark-col',
+            special: 'witchfire',
             type: g.type,
           });
         }
