@@ -1,5 +1,7 @@
 # Bewitched
 
+**Play:** https://magicalboyco.github.io/bewitched/ (served from `main` / root once Settings > Pages is set to deploy from a branch. Not verified live as of 2026-11-06.)
+
 A browser-based match-3 puzzle game in the spirit of Bejeweled — swap
 adjacent pieces, chain cascades, and trigger magical power-ups — built with
 plain HTML5 Canvas and vanilla JavaScript. No build step, no dependencies.
